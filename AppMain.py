@@ -30,9 +30,7 @@ out_path = os.path.join(DATA_PATH,"output_temp")
 # out_path = os.path.join(DATA_PATH,"output_temp_subset")
 output_final = os.path.join(DATA_PATH,"output_final")
 
-
 gene_extractor = GeneExtraction()
-# gene_input_file = "snp_gene_info.csv"
 
 # This function reads each snp per row and converts to 0 or 1 based of if there has been a mutation or not
 def snp_count(x):
@@ -46,115 +44,95 @@ def genotype_phenotype_extraction(usr_file_lst, phenotype, all_gene_data):
 
     # Get the phenotype information to append to the user name in final.csv
     pheno = "_" + phenotype
-    # merged = all_gene_data.drop(['Ref', 'Alt'], axis=1)
-    # print "Total number of users " , len(usr_file_lst)
-    # len_users = 0
-    # counter = 0
-    #
-    # for user in usr_file_lst:
-    #     counter+=1
-    #     print "Counter : ", counter, len(usr_file_lst)
-    #     # Dividing into 20s to assist memory issues
-    #     if counter % 20 != 0 and counter <= len(usr_file_lst):
-    #         write = False
-    #         # Extract just the user id from the file name
-    #         short_name = user.split('_y')[0] + '_'
-    #         # Added this loop to take care of other file types other than 23&me and ancestory.ext
-    #         # if "23andme.txt" in user or "ancestry.txt" in user:
-    #         print "Processing file : ", user
-    #         # If present, read the file and build allele transformation info
-    #         full_file_name = os.path.join(user_path,user)
-    #         data = gene_extractor.build_user_data(full_file_name,all_gene_data)
-    #
-    #         # Take care of incorrect file formats
-    #         if not data.empty:
-    #             # Number of actual users
-    #             len_users +=1
-    #             data = gene_extractor.allele_transformation(short_name, pheno, data)
-    #             # print data.dtypes
-    #             # Merge with the earlier dataset to build the data corpus
-    #             merged = pd.merge(merged,data,on=['Rsid','Gene_info'], how='outer' )
-    #             # Get the snp count for each user
-    #             # merged[short_name+'gene'+ pheno] = merged [short_name + 'snp' + pheno].apply(snp_count)
-    #             merged[short_name+'gene'+ pheno] = (merged [short_name + 'snp' + pheno].apply(snp_count)).astype(np.uint8)
-    #             merged[short_name + 'snp' + pheno].fillna(-1,inplace=True)
-    #             merged[short_name+'snp'+ pheno] = merged[short_name+'snp'+ pheno].astype(np.uint8)
-    #             print "Size of merged : ", merged.size
-    #             # print merged.info()
-    #             print "Files merged : ", len_users
-    #         # continue
-    #     else:
-    #         print "In outside while loop"
-    #         # Set Rsid as index - This is only to avoid Pandas from adding a row number. Increases the size of the output
-    #         merged = merged.set_index(['Rsid'])
-    #         # merged = merged.fillna("NaN")
-    #         # if its a multiple of 20, write the file into a temporary location
-    #         print "File name being written : " , os.path.join(out_path, "temp_file" + pheno + "_"+str(len_users) + ".csv")
-    #         merged.to_csv(os.path.join(out_path, "temp_file" + pheno + "_"+str(len_users) + ".csv"))
-    #         write = True
-    #         # Reset the merge object and start afresh
-    #         merged = all_gene_data.drop(['Ref', 'Alt'], axis=1)
-    # # To take care of corner cases, in case the file count is less than 20 and there are corrupt files in the list
-    # if(not write):
-    #     # Set Rsid as index - This is only to avoid Pandas from adding a row number. Increases the size of the output
-    #     merged = merged.set_index(['Rsid'])
-    #     # merged = merged.fillna("NaN")
-    #     # if its a multiple of 20, write the file into a temporary location
-    #     print "File name being written : ", os.path.join(out_path, "temp_file" + pheno + "_" + str(len_users) + ".csv")
-    #     merged.to_csv(os.path.join(out_path, "temp_file" + pheno + "_" + str(len_users) + ".csv"))
-    #
-    # print "Final number of users with valid data for phenotype  : ", phenotype , "  is : ",  len_users
-    #
-    # # Merge all the files into one big data file
-    # # Introducing this step to take care of memory issues. By this step, a large object is released from
-    # # memory and re-read
+    merged = all_gene_data.drop(['Ref', 'Alt'], axis=1)
+    print "Total number of users " , len(usr_file_lst)
+    len_users = 0
+    counter = 0
 
-    len_users = 399
-    merge_files(pheno,len_users)
-    # write_files(merged, pheno, len_users)
+    for user in usr_file_lst:
+        counter+=1
+        print "Counter : ", counter, len(usr_file_lst)
+        # Dividing into 20s to assist memory issues
+        if counter % 20 != 0 and counter <= len(usr_file_lst):
+            write = False
+            # Extract just the user id from the file name
+            short_name = user.split('_y')[0] + '_'
+            # Added this loop to take care of other file types other than 23&me and ancestory.ext
+            # if "23andme.txt" in user or "ancestry.txt" in user:
+            print "Processing file : ", user
+            # If present, read the file and build allele transformation info
+            full_file_name = os.path.join(user_path,user)
+            data = gene_extractor.build_user_data(full_file_name,all_gene_data)
 
+            # Take care of incorrect file formats
+            if not data.empty:
+                # Number of actual users
+                len_users +=1
+                data = gene_extractor.allele_transformation(short_name, pheno, data)
+                # Merge with the earlier dataset to build the data corpus
+                merged = pd.merge(merged,data,on=['Rsid','Gene_info'], how='outer' )
+                # Get the snp count for each user
+                merged[short_name+'gene'+ pheno] = (merged [short_name + 'snp' + pheno].apply(snp_count)).astype(np.uint8)
+                merged[short_name + 'snp' + pheno].fillna(-1,inplace=True)
+                merged[short_name+'snp'+ pheno] = merged[short_name+'snp'+ pheno].astype(np.uint8)
+                print "Size of merged : ", merged.size
+                print "Files merged : ", len_users
+
+        else:
+            print "In outside while loop"
+            # Set Rsid as index - This is only to avoid Pandas from adding a row number. Increases the size of the output
+            merged = merged.set_index(['Rsid'])
+            # if its a multiple of 20, write the file into a temporary location
+            print "File name being written : " , os.path.join(out_path, "temp_file" + pheno + "_"+str(len_users) + ".csv")
+            merged.to_csv(os.path.join(out_path, "temp_file" + pheno + "_"+str(len_users) + ".csv"))
+            write = True
+            # Reset the merge object and start afresh
+            merged = all_gene_data.drop(['Ref', 'Alt'], axis=1)
+    # To take care of corner cases, in case the file count is less than 20 and there are corrupt files in the list
+    if(not write):
+        # Set Rsid as index - This is only to avoid Pandas from adding a row number. Increases the size of the output
+        merged = merged.set_index(['Rsid'])
+        # if its a multiple of 20, write the file into a temporary location
+        print "File name being written : ", os.path.join(out_path, "temp_file" + pheno + "_" + str(len_users) + ".csv")
+        merged.to_csv(os.path.join(out_path, "temp_file" + pheno + "_" + str(len_users) + ".csv"))
+
+    print "Final number of users with valid data for phenotype  : ", phenotype , "  is : ",  len_users
+    return len_users
 # This function reads all the sub-output files and then merges them into a single output file
 def merge_files(pheno,len_users):
-    print "In merge_files..."
-    # lst_merged_users = os.listdir(out_path)
-    # lst_users = [file_name for file_name in lst_merged_users if pheno in file_name]
-    # print "User list \n" , lst_users
-    # merged = pd.DataFrame()
-    # for count,user in enumerate(lst_users):
-    #     file_name = os.path.join(out_path,user)
-    #     print "File being merged\n" , file_name
-    #     print "Merging %d of %d" %(count+1,len(lst_users))
-    #     # First time reading a file
-    #     if merged.empty:
-    #         merged = pd.read_csv(file_name,na_values=0)
-    #     else:
-    #         temp = pd.read_csv(file_name,na_values=0)
-    #         merged = pd.merge(merged,temp,on=['Rsid','Gene_info'], how='outer')
-    #     merged.fillna(255,inplace=True)
-    #     df_col_lst = list(merged)
-    #     df_col_lst = df_col_lst[2:]
-    #     merged[df_col_lst] = merged[df_col_lst].astype(np.uint8)
-    #     # print merged.info()
-    # merged = merged.set_index(['Rsid'])
-    # print "Writing file : ", os.path.join(output_inter, "Inter_file" + pheno + ".csv")
-    # merged.to_csv(os.path.join(output_inter, "Inter_file" + pheno + ".csv"))
-    # Process the merged file
-    write_files(pheno,len_users)
+    print "Merging all the files..."
+    lst_merged_users = os.listdir(out_path)
+    lst_users = [file_name for file_name in lst_merged_users if pheno in file_name]
+    merged = pd.DataFrame()
+    for count,user in enumerate(lst_users):
+        file_name = os.path.join(out_path,user)
+        print "File being merged\n" , file_name
+        print "Merging %d of %d" %(count+1,len(lst_users))
+        # First time reading a file
+        if merged.empty:
+            merged = pd.read_csv(file_name,na_values=0)
+        else:
+            temp = pd.read_csv(file_name,na_values=0)
+            merged = pd.merge(merged,temp,on=['Rsid','Gene_info'], how='outer')
+        merged.fillna(255,inplace=True)
+        df_col_lst = list(merged)
+        df_col_lst = df_col_lst[2:]
+        merged[df_col_lst] = merged[df_col_lst].astype(np.uint8)
+        # print merged.info()
+    merged = merged.set_index(['Rsid'])
+    print "Writing file : ", os.path.join(output_inter, "Inter_file" + pheno + ".csv")
+    merged.to_csv(os.path.join(output_inter, "Inter_file" + pheno + ".csv"))
 
-
-# def write_files(merged,suffix,len_users):
+# Process the merged file
 def write_files(suffix,len_users):
     print "Writing final output files..."
     merged_group = pd.DataFrame()
+    # Set the chunk size to about 10KMB and read file one chunk at a time
     chunksize = 10 ** 4
     # For the first write
     header = True
     # Breaking down into chunks of 1000MB to support scalability
     for merged in pd.read_csv(os.path.join(output_inter, "Inter_file" + suffix + ".csv"), chunksize=chunksize):
-        print "Before NaN\n" , merged.head()
-        # merged = merged.replace(255, 'NaN')
-
-
         # Get the list of columns
         df_col_lst = list(merged)
         # Starting from col 3, jump every two columns (this will do the mutated snp count)
@@ -179,11 +157,6 @@ def write_files(suffix,len_users):
         cols = merged.columns.tolist()
         cols = cols[1:2] + cols[0:1] + cols[-1:] + cols[2:-1]
         merged = merged[cols]
-        # print merged.info()
-
-
-        # merged = merged.fillna("NaN")
-        # print merged.info()
 
         # Set Rsid as index - This is only to avoid Pandas from adding a row number. Increases the size of the output
         merged = merged.set_index(['Rsid'])
@@ -198,7 +171,6 @@ def write_files(suffix,len_users):
 
         except:
             print "Error writing final output file. Please check your files again..."
-
 
     merged_group = merged_group.reset_index()
     # Drop the two rows and then recalculate and add them back
@@ -217,11 +189,10 @@ def write_files(suffix,len_users):
     # Save to csv
     try:
         print "Writing file : ", os.path.join(output_final, "final_grouped" + suffix + ".csv")
-        # with open (os.path.join(output_final, "final_grouped" + suffix + ".csv"),'a') as final_grouped:
         merged_group.to_csv()
-            # header = False
     except:
         print "Error writing final grouped file. Please check your files again..."
+
     return os.path.join(output_final, "final_file" + suffix + ".csv") ,os.path.join(output_final, "final_grouped" + suffix + ".csv")
 
 def file_analysis(file_path,suffix):
@@ -289,17 +260,29 @@ def main():
 
     # 05. Compare if the user id exists in the directory, then read and process it
     for eye_color in lst_colors:
+        suffix = "_" + eye_color
         # Process the users with eye_color Brown
         if eye_color == "Brown":
             print "In Brown phenotype loop "
-            # final_path, final_grouped_path = genotype_phenotype_extraction(user_file_lst_brown, "Brown", all_gene_data)
+            len_users = genotype_phenotype_extraction(user_file_lst_brown, "Brown", all_gene_data)
+            # Merge all the files into one big data file
+            # Introducing this step to take care of memory issues. By this step, a large object is released from
+            # memory and re-read
+            merge_files(suffix)
+            # Process the merged file
+            final_path, final_grouped_path = write_files(suffix,len_users)
+            file_analysis(final_grouped_path, suffix)
         # Process the users with eye_color Blue or Green
         else:
             print "In Blue-green phenotype loop "
-            final_path, final_grouped_path = genotype_phenotype_extraction(user_file_lst_blue_green, "Blue_Green", all_gene_data)
-            suffix = "_" + eye_color
-            # final_grouped_path = "C:\Lakshmi\MSHI\Github\Genotype-Phenotype-Project\GeneExtraction\Data\output_final\\final_grouped_Blue_Green.csv"
-            file_analysis(final_grouped_path,suffix)
+            len_users = genotype_phenotype_extraction(user_file_lst_brown, "Blue_Green", all_gene_data)
+            # Merge all the files into one big data file
+            # Introducing this step to take care of memory issues. By this step, a large object is released from
+            # memory and re-read
+            merge_files(suffix)
+            # Process the merged file
+            final_path, final_grouped_path = write_files(suffix,len_users)
+            file_analysis(final_grouped_path, suffix)
 
 if __name__  == "__main__":
     main()
