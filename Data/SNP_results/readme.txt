@@ -1,0 +1,1 @@
+This folder will contain SNP_results downloaded from DBSNP database.
