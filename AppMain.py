@@ -128,7 +128,7 @@ def write_files(suffix,len_users):
     print "Writing final output files..."
     merged_group = pd.DataFrame()
     # Set the chunk size to about 10KMB and read file one chunk at a time
-    chunksize = 10 ** 4
+    chunksize = 10 ** 3
     # For the first write
     header = True
     # Breaking down into chunks of 1000MB to support scalability
@@ -255,8 +255,7 @@ def main():
             elif pheno in ("Blue", "Green"):
                 user_file_lst_blue_green.append(user)
 
-    # lst_colors = ['Brown', 'Blue_Green']
-    lst_colors = ['Blue_Green']
+    lst_colors = ['Brown', 'Blue_Green']
 
     # 05. Compare if the user id exists in the directory, then read and process it
     for eye_color in lst_colors:
