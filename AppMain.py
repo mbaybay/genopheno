@@ -127,17 +127,17 @@ def merge_files(pheno,len_users):
 def write_files(suffix,len_users):
     print "Writing final output files..."
     merged_group = pd.DataFrame()
-    # Set the chunk size to about 10KMB and read file one chunk at a time
-    chunksize = 10 ** 3
+    # Set the chunk size to about 10000MB and read file one chunk at a time
+    chunksize = 10 ** 4
     # For the first write
     header = True
     # Breaking down into chunks of 1000MB to support scalability
-    for merged in pd.read_csv(os.path.join(output_inter, "Inter_file" + suffix + ".csv"), chunksize=chunksize):
+    for i, merged in enumerate(pd.read_csv(os.path.join(output_inter, "Inter_file" + suffix + ".csv"), chunksize=chunksize)):
+        print "Reading chunk %d" %(i)
         # Get the list of columns
         df_col_lst = list(merged)
         # Starting from col 3, jump every two columns (this will do the mutated snp count)
         jump_list = df_col_lst[3::2]
-        print jump_list
 
         # Sum the snp mutation count
         merged[jump_list] = (merged[jump_list].replace(255,0))
@@ -157,10 +157,14 @@ def write_files(suffix,len_users):
         cols = merged.columns.tolist()
         cols = cols[1:2] + cols[0:1] + cols[-1:] + cols[2:-1]
         merged = merged[cols]
-
         # Set Rsid as index - This is only to avoid Pandas from adding a row number. Increases the size of the output
         merged = merged.set_index(['Rsid'])
-        merged_group = pd.concat([merged_group, merged])
+        print merged.shape
+        if(merged_group.empty):
+            merged_group = merged
+        else:
+            merged_group = merged_group.append(merged)
+        print merged_group.shape
         # Save to csv
         try:
             print "Writing file - In Write Files Line 185 : ", os.path.join(output_final, "final_file" + suffix + ".csv")
@@ -168,7 +172,6 @@ def write_files(suffix,len_users):
             with open(os.path.join(output_final, "final_file" + suffix + ".csv"),'a') as final_out:
                 merged.to_csv(final_out,header=header)
                 header = False
-
         except:
             print "Error writing final output file. Please check your files again..."
 
@@ -178,7 +181,7 @@ def write_files(suffix,len_users):
     # Aggregate by count of mutations per gene
     merged_group = merged_group.groupby('Gene_info').sum()
     # Count the number of users that have the gene mutated
-    merged_group['total_user_per_gene'+ suffix] = (merged_group.astype(bool).sum(axis=1)).astype(np.uint8)
+    merged_group['total_user_per_gene'+ suffix] = (merged_group.astype(bool).sum(axis=1)).astype(np.uint)
     # This provides the percentage of users per phenotype that had mutation per gene
     merged_group['percent_users' + suffix] = (merged_group['total_user_per_gene' + suffix]/len_users) * 100
     # Rearrange the cols so that percentage figures appear towards the beginning of the table
@@ -189,19 +192,17 @@ def write_files(suffix,len_users):
     # Save to csv
     try:
         print "Writing file : ", os.path.join(output_final, "final_grouped" + suffix + ".csv")
-        merged_group.to_csv()
+        merged_group.to_csv(os.path.join(output_final, "final_grouped" + suffix + ".csv"))
     except:
         print "Error writing final grouped file. Please check your files again..."
 
     return os.path.join(output_final, "final_file" + suffix + ".csv") ,os.path.join(output_final, "final_grouped" + suffix + ".csv")
 
 def file_analysis(file_path,suffix):
+
     data = pd.read_csv(file_path)
-    # row_name = 'percent_users' + suffix
-    # print row_name
-    # data = data[data[row_name] > 60]
-    # data.to_csv("C:\Lakshmi\MSHI\Github\Genotype-Phenotype-Project\GeneExtraction\Data\output_final\\final_grouped_Blue_Green_subset.csv")
-    print data.loc[data["Gene_info"] == "4948:OCA2"]
+    print data.head()
+    #     Can do any futher analysis on the data here
 
 def main():
 
@@ -211,12 +212,11 @@ def main():
     for file in user_lst:
         if file.endswith("23andme.txt") or file.endswith("ancestry.txt"):
             user_file_lst.append(file)
-
     gene_extractor = GeneExtraction()
 
     # 01. Use Shraddha's 'batchquery_processing' logic
     print "Processing batch query..."
-    # gene_extractor.batchquery_processing(os.path.join(DATA_PATH,db_snps_path),main_gene_file)
+    gene_extractor.batchquery_processing(os.path.join(DATA_PATH,db_snps_path),main_gene_file)
 
     # 02. Read all snp-gene data and build a data table
     print "Reading all snps and gene data..."
@@ -281,6 +281,7 @@ def main():
             merge_files(suffix)
             # Process the merged file
             final_path, final_grouped_path = write_files(suffix,len_users)
+            # final_grouped_path = "C:\Lakshmi\MSHI\Github\Genotype-Phenotype-Project\GeneExtraction\Data\output_final\\final_grouped_Blue_Green1.csv"
             file_analysis(final_grouped_path, suffix)
 
 if __name__  == "__main__":
