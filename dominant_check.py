@@ -11,10 +11,10 @@ def dominant_check():
     :return: List of selected dominant genes
     '''
     print "Reading Blue Green Grouped File..."
-    data_gbg = pd.read_csv('output_final/final_grouped_Blue_Green.csv')
+    data_gbg = pd.read_csv('Data/output_final/final_grouped_Blue_Green.csv')
 
     print "Reading Brown Grouped File..."
-    data_gbr = pd.read_csv('output_final/final_grouped_Brown.csv')
+    data_gbr = pd.read_csv('Data/output_final/final_grouped_Brown.csv')
 
     blue_genes=data_gbg.Gene_info
 
@@ -47,6 +47,6 @@ def dominant_check():
 
     return selected_genes
 
-if __name__=="__main__"
+if __name__=="__main_":
     dominant_check()
 
