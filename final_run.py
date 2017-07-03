@@ -6,9 +6,12 @@ from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 from sklearn.model_selection import train_test_split
 import sklearn.metrics as skm
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.feature_selection import SelectFromModel
 from sklearn import tree
+from sklearn.metrics import confusion_matrix
+
+from subprocess import check_call
+import pydot
+import graphviz
 
 def classify_metric(test_y, test_y_pred):
     """
@@ -329,98 +332,7 @@ def dominant_check(upper, lower):
         for val in brown_dominant:
             writer.writerow([val])
 
-def data_pheno_merge():
-        '''
-        Pre-process the data to combine brown and blue-green dataframes, make SNPs columns instead of rows, and add the 
-        phenotype column
 
-        :return: 
-        '''
-
-        blue_dominant = pd.read_csv(filepath_or_buffer='Data/output_temp/blue_dominant_snps.csv', header=None,
-                                    names=['Rsid'])
-
-        blue_recessive = pd.read_csv(filepath_or_buffer='Data/output_temp/blue_recessive_snps.csv', header=None,
-                                     names=['Rsid'])
-
-        brown_dominant = pd.read_csv(filepath_or_buffer='Data/output_temp/brown_dominant_snps.csv', header=None,
-                                     names=['Rsid'])
-
-        brown_recessive = pd.read_csv(filepath_or_buffer='Data/output_temp/brown_recessive_snps.csv',
-                                      header=None,
-                                      names=['Rsid'])
-
-        combined = brown_dominant['Rsid'].tolist() + blue_dominant['Rsid'].tolist() + blue_recessive['Rsid'].tolist() + \
-                   brown_recessive['Rsid'].tolist()
-
-        print "Reading final file Blue Green..."
-        data_bg = pd.read_csv('Data/output_intermediate/final_snp_bg.csv')
-
-        pheno = pd.read_csv('Data/final_eyecolor_phenotypes.csv')
-
-        print pheno.head()
-
-        blue_df = data_bg.loc[data_bg['Rsid'].isin(combined)]
-
-        # print blue_df.head()
-        # blue_df.to_csv('blue_df.csv')
-        blue_df.drop(labels='Gene_info', axis=1, inplace=True)
-        blue_df.drop_duplicates(subset='Rsid', inplace=True)
-
-        blue_df_t = blue_df.transpose()
-
-        blue_df_t = blue_df_t.rename(columns=blue_df_t.iloc[0])
-        blue_df_t = blue_df_t[1:]
-        blue_df_t['user_id'] = blue_df_t.index
-
-        blue_df_t['user_id'] = blue_df_t['user_id'].apply(pd.to_numeric)
-
-        print blue_df_t['user_id'].head()
-        # print blue_df_t.iloc[:,0]
-
-        # blue_df_t.to_csv('Data/output_temp/blue_df_t.csv')
-
-        print "Reading final file Brown..."
-        data_br = pd.read_csv('Data/output_intermediate/final_snp_br.csv')
-
-        colnames = data_br.columns.values
-
-        brown_df = data_br.loc[data_br['Rsid'].isin(combined)]
-
-        # print brown_df.head()
-        # brown_df.to_csv('brown_df.csv')
-        brown_df.drop(labels='Gene_info', axis=1, inplace=True)
-
-        brown_df.drop_duplicates(subset='Rsid', inplace=True)
-
-        brown_df_t = brown_df.transpose()
-        brown_df_t = brown_df_t.rename(columns=brown_df_t.iloc[0])
-        brown_df_t = brown_df_t[1:]
-
-        brown_df_t['user_id'] = brown_df_t.index
-
-        brown_df_t['user_id'] = brown_df_t['user_id'].apply(pd.to_numeric)
-
-        print brown_df_t.head()
-
-        # brown_df_t.to_csv('Data/output_temp/brown_df_t.csv')
-
-
-        final_dataset_blue = blue_df_t.merge(pheno, how="inner", left_on='user_id', right_on='user_id')
-
-        final_dataset_blue.phenotype[final_dataset_blue['phenotype']=='Green']='Blue'
-
-        print final_dataset_blue.head()
-
-        final_dataset_brown = brown_df_t.merge(pheno, on="user_id")
-        #
-        print final_dataset_brown.head()
-        #
-        final_dataset = pd.concat([final_dataset_blue, final_dataset_brown])
-        #
-        final_dataset.to_csv("Data/output_intermediate/final_dataset.csv", index=False)
-        #
-        print final_dataset.head()
 
 def all_snps_on_gene():
     blue_dominant = pd.read_csv(filepath_or_buffer='Data/output_temp/blue_dominant_snps.csv', header=None,
@@ -451,8 +363,6 @@ def all_snps_on_gene():
 
     blue_df= data_bg.loc[data_bg['Gene_info'].isin(blue_genes)]
 
-    #print blue_df.head()
-    # blue_df.to_csv('blue_df.csv')
     blue_df.drop(labels='Gene_info', axis=1, inplace=True)
     blue_df.drop_duplicates(subset='Rsid', inplace=True)
 
@@ -464,23 +374,13 @@ def all_snps_on_gene():
 
     blue_df_t['user_id'] = blue_df_t['user_id'].apply(pd.to_numeric)
 
-    #print blue_df_t['user_id'].head()
-    # print blue_df_t.iloc[:,0]
-
-    # blue_df_t.to_csv('Data/output_temp/blue_df_t.csv')
-
     print "Reading final file Brown..."
     data_br = pd.read_csv('Data/output_intermediate/final_snp_br.csv')
 
-
-
     brown_genes = data_br.loc[data_br['Rsid'].isin(combined), 'Gene_info']
-    print brown_genes
 
     brown_df = data_br.loc[data_br['Gene_info'].isin(brown_genes)]
 
-    # print brown_df.head()
-    # brown_df.to_csv('brown_df.csv')
     brown_df.drop(labels='Gene_info', axis=1, inplace=True)
 
     brown_df.drop_duplicates(subset='Rsid', inplace=True)
@@ -493,26 +393,16 @@ def all_snps_on_gene():
 
     brown_df_t['user_id'] = brown_df_t['user_id'].apply(pd.to_numeric)
 
-    #print brown_df_t.head()
+    blue_df_t['phenotype'] = 'Blue'
 
-    # brown_df_t.to_csv('Data/output_temp/brown_df_t.csv')
+    brown_df_t['phenotype'] = 'Brown'
+
+    final_dataset=pd.concat([blue_df_t,brown_df_t])
 
 
-    final_dataset_blue = blue_df_t.merge(pheno, how="inner", left_on='user_id', right_on='user_id')
-
-    final_dataset_blue.phenotype[final_dataset_blue['phenotype'] == 'Green'] = 'Blue'
-
-    #print final_dataset_blue.head()
-
-    final_dataset_brown = brown_df_t.merge(pheno, on="user_id")
-    #
-    #print final_dataset_brown.head()
-    #
-    final_dataset = pd.concat([final_dataset_blue, final_dataset_brown])
     #
     final_dataset.to_csv("Data/output_intermediate/final_dataset.csv", index=False)
     #
-    #print final_dataset.head()
 
 
 def ML_forest():
@@ -531,6 +421,8 @@ def ML_forest():
     X = final_dataset.drop(labels=['phenotype'], axis=1)
     y = final_dataset.loc[:, 'phenotype']
 
+    print y.unique()
+
     X_col_names = X.columns.values
     imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
     imp = imp.fit(X)
@@ -554,6 +446,9 @@ def ML_forest():
     y_pred = clf.predict(X_test)
 
     classify_metric(y_test, y_pred)
+
+    cnf_matrix = confusion_matrix(y_test,y_pred)
+    print cnf_matrix
 
 def ML_dtree():
     '''
@@ -571,138 +466,33 @@ def ML_dtree():
     X = final_dataset.drop(labels=['phenotype'], axis=1)
     y = final_dataset.loc[:, 'phenotype']
 
-    X_col_names = X.columns.values
-    imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
-    imp = imp.fit(X)
-
-    X = imp.transform(X)
-    clf = RandomForestClassifier(n_estimators=1000, max_features='auto', n_jobs=-1)
-    clf = clf.fit(X, y)
-
-    print(clf.feature_importances_)
-
-    imp_df = pd.DataFrame({"col_name": X_col_names, "importance": np.round(clf.feature_importances_, 5)})
-    print imp_df.sort_values(by='importance', ascending=False)
-
-    imp_df.to_csv("feature_importances.csv")
-    imp_df.to_csv("feature_importances_ft.csv")
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-
-    clf = RandomForestClassifier(n_estimators=1000, max_features='auto', n_jobs=-1)
-    clf = clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-
-    classify_metric(y_test, y_pred)
-
-
-def Ml_100():
-    final_dataset = pd.read_csv('Data/output_intermediate/final_dataset.csv')
-    final_dataset.drop('user_id', axis=1, inplace=True)
-
-    final_dataset.dropna(axis=1, thresh=int(0.1 * len(final_dataset)), inplace=True)
-
-    print "Shape after drop: ", final_dataset.shape
-
-    X = final_dataset.drop(labels=['phenotype'], axis=1)
-    y = final_dataset.loc[:, 'phenotype']
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-
-    X_col_names = X.columns.values
-    imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
-    imp = imp.fit(X_train)
-
-    X_train = imp.transform(X_train)
-    clf = ExtraTreesClassifier()
-    clf = clf.fit(X_train, y_train)
-
-    print(clf.feature_importances_)
-
-    imp_df = pd.DataFrame({"SNP": X_col_names, "importance": np.round(clf.feature_importances_, 5)})
-    print imp_df.sort_values(by='importance', ascending=False)
-
-    model = SelectFromModel(clf, prefit=True)
-
-
-
-    X_new = model.transform(X)
-
-    print X_new.shape
-
-    X_test = imp.transform(X_test)
-
-    X_test
-
-
-
-
-    chosen_snps=imp_df['SNP'].head(n=100)
-
-
-
-    #clf = RandomForestClassifier(n_estimators=1000, max_features='auto', n_jobs=-1)
-    #clf = clf.fit(X_new, y)
-
-    X_train, X_test, y_train, y_test = train_test_split(X_new, y, test_size=0.33, random_state=42)
-
-    clf = RandomForestClassifier(n_estimators=1000, max_features='auto', n_jobs=-1)
-    clf = clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-
-    classify_metric(y_test, y_pred)
-
-
-def fine_tune():
-    '''
-    
-    :return: 
-    '''
-    importance= pd.read_csv('feature_importances_ft.csv')
-    snp = importance.loc[importance['importance']>0,'col_name']
-
-    snp=snp.tolist()
-
-    snp= snp + ['phenotype']
-
-    final= pd.read_csv('Data/output_intermediate/final_dataset.csv')
-    final_dataset=final.loc[:,final.columns.isin(snp)]
-
-    rows,cols = final_dataset.shape
-
-
-
-#    final_dataset.dropna(axis=1, thresh=0.8, inplace=True)
-
-    print "Shape after drop: ", final_dataset.shape
-
-    X = final_dataset.drop(labels=['phenotype'], axis=1)
-    y = final_dataset.loc[:, 'phenotype']
+    print y.unique()
 
     X_col_names = X.columns.values
     imp = Imputer(missing_values='NaN', strategy='most_frequent', axis=0)
     imp = imp.fit(X)
 
     X = imp.transform(X)
-    clf = RandomForestClassifier(n_estimators=1000, max_features='auto', n_jobs=-1)
-    clf = clf.fit(X, y)
-
-    print(clf.feature_importances_)
-
-    imp_df = pd.DataFrame({"col_name": X_col_names, "importance": np.round(clf.feature_importances_, 5)})
-    #print imp_df.sort_values(by='importance', ascending=False)
-
-    imp_df.to_csv("feature_importances_ft.csv")
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
-    clf = RandomForestClassifier(n_estimators=1000, max_features='auto', n_jobs=-1)
-    clf = clf.fit(X_train, y_train)
+    clf = tree.DecisionTreeClassifier()
+    clf = clf.fit(X, y)
+
+    with open("Data/output_temp/dtree.dot", 'w') as f:
+        f = tree.export_graphviz(clf, out_file=f,feature_names=X_col_names)
+
+    #(graph,) = pydot.graph_from_dot_file('Data/output_temp/dtree.dot')
+    #graph.write_png('Data/output_temp/dtree.png')
+
+
     y_pred = clf.predict(X_test)
 
-    sensitivity, specificity, accuracy = classify_metric(y_test, y_pred)
+    classify_metric(y_test, y_pred)
 
-    return sensitivity,specificity,accuracy,cols
+    cnf_matrix = confusion_matrix(y_test, y_pred)
+    print cnf_matrix
+
 
 
 if __name__=='__main__':
@@ -711,21 +501,12 @@ if __name__=='__main__':
     print "Computing percentages..."
     #pct_computation()
     print "Checking Dominant Traits..."
-    dominant_check(65,35)
+    #dominant_check(65,35)
     print "Checking recessive traits..."
-    recessive_check(65,35)
+    #recessive_check(65,35)
     print "Merging Phenotype..."
-    #data_pheno_merge()
+
     all_snps_on_gene()
     print "Machine Learning..."
     ML_forest()
-    #Ml_100()
-    # sensitivity,specificity,accuracy,cols=fine_tune()
-    # count = 0
-    # while accuracy<=0.78 and count < 100:
-    #     count +=1
-    #     print "accuracy: , num_features:"
-    #     print accuracy, cols - 1
-    #     sensitivity, specificity, accuracy, cols = fine_tune()
-    #
-    # print "final accuracy: %f, final number of features: %d"%(accuracy,cols-1)
+    ML_dtree()
