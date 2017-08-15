@@ -18,8 +18,8 @@ import sklearn.metrics as skm
 from sklearn import tree
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import GridSearchCV
-from sklearn.linear_model import LogisticRegression
+#from sklearn.model_selection import GridSearchCV
+#from sklearn.linear_model import LogisticRegression
 
 
 from operator import itemgetter
@@ -572,7 +572,7 @@ def ML_forest(file_path):
 
 
 
-# Chris Strelioff's code
+# Chris Strelioff's code: replace this as it is deprecated
 #http://chrisstrelioff.ws/sandbox/2015/06/25/decision_trees_in_python_again_cross_validation.html
 def report(grid_scores, n_top=3):
     """Report top n_top parameters settings, default n_top=3.
