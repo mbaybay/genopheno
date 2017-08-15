@@ -1,4 +1,4 @@
-__author__ = 'Lakshmi Arbatti'
+__author__ = 'Lakshmi Arbatti, Shraddha Lanka, Gaurika Tyagi'
 
 import pandas as pd
 import os
@@ -145,4 +145,5 @@ class GeneExtraction:
         # data[user + 'snp' + pheno] = pd.to_numeric(data.apply(self.find_mutations, axis=1))
         data[user + 'snp' + pheno] = data.apply(self.find_mutations, axis=1)
         data = data.drop(['Genotype' , 'Ref', 'Alt'], axis = 1)
+        # data = data.drop(['Genotype'], axis = 1)
         return data
