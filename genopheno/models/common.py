@@ -77,7 +77,8 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
 
     # Test model
     y_pred = best_model.predict(x_test)
-    __save_confusion_matrix(y_test, y_pred, output_dir)
+    __save_confusion_matrix(y_test, y_pred, output_dir, 'testing_data')
+    __save_confusion_matrix(y_train, best_model.predict(x_train), output_dir, 'training_data')
 
     # Optional model stats
     roc_probs = model_eval.get('roc')
@@ -90,13 +91,13 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
         features(best_model, model_terms, output_dir)
 
 
-
-def __save_confusion_matrix(y_true, y_pred, output_dir):
+def __save_confusion_matrix(y_true, y_pred, output_dir, file_suffix):
     """
     Calculates the metrics for the model prediction using a confusion matrix
     :param y_true: The test data provided as a numpy array
     :param y_pred: The test predicted by the model as a numpy array
     :param output_dir: The directory to write the results to
+    :param file_suffix: The suffix for the output file name
     """
     confusion_matrix = skm.confusion_matrix(y_true, y_pred)
     true_pos = confusion_matrix[1][1]
@@ -120,7 +121,7 @@ def __save_confusion_matrix(y_true, y_pred, output_dir):
                 linesep)
 
     print metrics
-    with open(path.join(output_dir, 'confusion_matrix.txt'), 'w') as metrics_file:
+    with open(path.join(output_dir, 'confusion_matrix_{}.txt'.format(file_suffix)), 'w') as metrics_file:
         metrics_file.write(metrics)
 
 
