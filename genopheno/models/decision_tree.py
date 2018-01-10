@@ -37,7 +37,7 @@ def build_model(data_set, data_split, no_interactions, negative, max_snps, outpu
     common.build_model(
         data_set,
         data_split,
-        no_interactions,
+        True,
         negative,
         tree.DecisionTreeClassifier(random_state=1),
         max_snps,

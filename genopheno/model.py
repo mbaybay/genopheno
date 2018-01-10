@@ -144,7 +144,8 @@ if __name__ == '__main__':
         "-ni",
         default=False,
         action='store_true',
-        help="If set then interactions will not be included in the model."
+        help="If set then interactions will not be included in the model. Note, this does not apply for the decision "
+             "tree model."
              "\n\nDefault: False"
     )
 
