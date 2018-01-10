@@ -41,12 +41,13 @@ def __read_phenotype_input(input_dir):
     return phenotypes
 
 
-def run(preprocessed_dir, invalid_thresh, diff_thresh, magnitude_thresh, data_split, no_interactions, negative,
-        max_snps, model_id, output_dir):
+def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, diff_thresh, magnitude_thresh, data_split,
+        no_interactions, negative, max_snps, model_id, output_dir):
     """
     Builds a model to predict phenotype
     :param preprocessed_dir: The directory containing the preprocessed data
-    :param invalid_thresh: The acceptable percentage of missing data before a SNP or user is discarded
+    :param invalid_thresh: The acceptable percentage of missing data before a SNP is discarded
+    :param invalid_user_thresh: The acceptable percentage of missing data before a user is discarded
     :param diff_thresh: The mutation percent difference between phenotypes to be selected as a model feature
     :param magnitude_thresh: The mutation percentage difference magnitude between phenotypes to be selected as a model
     feature.
@@ -70,7 +71,7 @@ def run(preprocessed_dir, invalid_thresh, diff_thresh, magnitude_thresh, data_sp
 
     phenotypes = timed_invoke('reading the preprocessed files', lambda: __read_phenotype_input(preprocessed_dir))
     data_set = timed_invoke('creating model data set', lambda: mutation_difference.create_dataset(
-                               phenotypes, invalid_thresh, diff_thresh, magnitude_thresh)
+                               phenotypes, invalid_thresh, invalid_user_thresh, diff_thresh, magnitude_thresh)
                             )
     timed_invoke('building model', lambda: build_model(data_set, data_split, no_interactions, negative, max_snps,
                                                        output_dir))
@@ -99,6 +100,17 @@ if __name__ == '__main__':
         help="The maximum percentage of missing or invalid user observations a SNP can have before it is not "
              "considered as a feature in the model."
              "\n\nDefault: 65"
+    )
+
+    parser.add_argument(
+        "--invalid-user-thresh",
+        "-iu",
+        metavar="percent",
+        type=float,
+        default=90,
+        help="The maximum percentage of missing or invalid SNP observations a user can have before it is not "
+             "considered as a valid example in the model."
+             "\n\nDefault: 90"
     )
 
     parser.add_argument(
@@ -187,5 +199,5 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    run(args.preprocessed, args.invalid_snp_thresh, args.diff_thresh, args.magnitude_thresh, args.split, args.no_interactions,
-        args.negative, args.max_snps, args.model, args.output)
+    run(args.preprocessed, args.invalid_snp_thresh, args.invalid_user_thresh, args.diff_thresh, args.magnitude_thresh,
+        args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.output)

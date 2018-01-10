@@ -124,10 +124,11 @@ def __format_selected_snps(pheno_label, pheno_df, selected_snps):
     return transposed_data
 
 
-def create_dataset(phenotypes, invalid_thresh, diff_thresh, magnitude_thresh):
+def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, diff_thresh, magnitude_thresh):
     """
     Function to return those SNPs that satisfy a criterion to check for differences between blue and brown SNPs
     :param invalid_thresh The percentage of missing user observations a SNP can have before it is removed
+    :param invalid_user_thresh The acceptable percentage of missing data before a user is discarded
     :param diff_thresh: Minimum difference in percentage points of mutated alleles between different phenotypes in order
     to include a SNP in set of candidates
     :param magnitude_thresh: # Minimum percent difference in percentage of mutated alleles between different phenotypes
@@ -154,7 +155,7 @@ def create_dataset(phenotypes, invalid_thresh, diff_thresh, magnitude_thresh):
     # Remove users that do not have enough observations
     user_count = merged.shape[0]
     snp_count = merged.shape[1] - 1
-    min_obs = math.ceil((1 - invalid_thresh / float(100)) * snp_count)
+    min_obs = math.ceil((1 - invalid_user_thresh / float(100)) * snp_count)
     merged.dropna(axis=0, thresh=min_obs, inplace=True)
     print '{} users dropped due to too many missing observations. Remaining users: {}'\
         .format(user_count - merged.shape[0], merged.shape[0])
