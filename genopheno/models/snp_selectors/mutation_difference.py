@@ -113,6 +113,7 @@ def __format_selected_snps(pheno_label, pheno_df, selected_snps):
     """
     # Filter out SNPs that have not been selected
     snp_data = pheno_df.loc[selected_snps]
+    snp_data.index = 'gene_' + snp_data['Gene_info'].str.replace(r'\W', '_') + '_' + snp_data.index
 
     # Drop the mutation percentages and gene info columns because they are no longer needed
     snp_data.drop(labels=['Gene_info', 'pct_fm', 'pct_nm', 'pct_pm'], axis=1, inplace=True)
