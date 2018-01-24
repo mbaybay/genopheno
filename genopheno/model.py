@@ -96,10 +96,10 @@ if __name__ == '__main__':
         "-it",
         metavar="percent",
         type=float,
-        default=65,
+        default=40,
         help="The maximum percentage of missing or invalid user observations a SNP can have before it is not "
              "considered as a feature in the model."
-             "\n\nDefault: 65"
+             "\n\nDefault: 40"
     )
 
     parser.add_argument(
