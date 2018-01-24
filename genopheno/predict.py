@@ -38,7 +38,6 @@ def run(users_dir, init_dir, model_dir, output_dir):
     # Predict for each user
     imputer = model_config['imputer']
     model_desc = build_model_desc(snp_columns, model_config['no_interactions'])
-    scaler = model_config['scaler']
     model = model_config['model']
     pheno_map = model_config['pheno_map']
     users = []
@@ -57,9 +56,6 @@ def run(users_dir, init_dir, model_dir, output_dir):
 
         # Create model feature set
         x = dmatrix(model_desc, pd.DataFrame(x, columns=mutations.columns))
-
-        # Scale predictor values
-        x = scaler.transform(x)
 
         # Predict
         return model.predict(x)[0]

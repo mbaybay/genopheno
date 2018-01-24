@@ -66,7 +66,7 @@ def save_features(model, term_labels, output_dir):
     features.sort_values(ascending=False, inplace=True, by='coef_abs')
     features.drop('coef_abs', axis=1, inplace=True)
 
-    with file(path.join(output_dir, 'features.csv'), 'w') as f:
+    with file(path.join(output_dir, 'model_features.csv'), 'w') as f:
         f.write('intercept: {}{}{}'.format(model.intercept_[0], linesep, linesep))
 
         # main effects
@@ -77,7 +77,3 @@ def save_features(model, term_labels, output_dir):
         # interactions
         f.write('{}interaction effects:{}'.format(linesep, linesep))
         features[main_effects].to_csv(f, index=False)
-
-        # all effects
-        f.write('{}all effects:{}'.format(linesep, linesep))
-        features.to_csv(f, index=False)
