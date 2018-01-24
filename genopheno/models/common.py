@@ -7,7 +7,7 @@ import pandas as pd
 import pickle
 from patsy import ModelDesc, EvalFactor, Term, dmatrix
 from os import linesep, path
-from sklearn.preprocessing import Imputer, StandardScaler
+from sklearn.preprocessing import Imputer
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import roc_curve, auc
 
@@ -60,12 +60,6 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
     model_desc = build_model_desc(snp_columns, no_interactions)
     x_train = dmatrix(model_desc, pd.DataFrame(x_train, columns=snp_columns))
     x_test = dmatrix(model_desc, pd.DataFrame(x_test, columns=snp_columns))
-
-    # Standardize scale for each feature
-    scaler = StandardScaler()
-    x_train = scaler.fit_transform(x_train)
-    x_test = scaler.transform(x_test)
-    model_config['scaler'] = scaler
 
     # Fit training data to model
     grid = GridSearchCV(model, param_grid=param_grid)
