@@ -1,15 +1,17 @@
 import argparse
-import re
 import os
-import pandas as pd
-from models.snp_selectors import mutation_difference
-from util import timed_invoke, expand_path, clean_output
-from models import elastic_net, decision_tree
+import re
 
+import pandas as pd
+
+from genopheno.snp_selectors import mutation_difference
+from models import elastic_net, decision_tree, random_forest
+from util import timed_invoke, expand_path, clean_output
 
 MODELS = {
     'en': elastic_net.build_model,
-    'dt': decision_tree.build_model
+    'dt': decision_tree.build_model,
+    'rf': random_forest.build_model
 }
 
 
@@ -33,6 +35,8 @@ def __read_phenotype_input(input_dir):
         # add the data frame to the collection of preprocessed phenotypes
         phenotype = f[len(file_prefix):len(f) - len('.csv.gz')]
         phenotypes[phenotype] = df
+        print "{} users and {} SNPs for phenotype '{}'"\
+            .format(len(df.columns)-5, df.shape[0], phenotype)
 
     if len(phenotypes) == 0:
         raise ValueError('No preprocessed files in directory "{}". '
@@ -99,7 +103,7 @@ if __name__ == '__main__':
         default=40,
         help="The maximum percentage of missing or invalid user observations a SNP can have before it is not "
              "considered as a feature in the model."
-             "\n\nDefault: 40"
+             "\n\nDefault: 40"  # TODO: try 60
     )
 
     parser.add_argument(
@@ -119,7 +123,7 @@ if __name__ == '__main__':
         metavar="percent",
         type=float,
         default=20,
-        help="The difference threshold required for the SNP to be selected, in percentage points."
+        help="The difference threshold required for the SNP to be selected, as a percent of the higher value."
              "\n\nDefault: 20"
     )
 
@@ -171,10 +175,10 @@ if __name__ == '__main__':
     parser.add_argument(
         "--max-snps",
         "-ms",
-        default=200,
+        default=None,
         type=int,
         help="The maximum number of SNPs to include in the model"
-             "\n\nDefault: 200"
+             "\n\nDefault: None"
     )
 
     parser.add_argument(
@@ -183,7 +187,7 @@ if __name__ == '__main__':
         default="en",
         type=str,
         help="The type of model to use."
-             "\nen = Elastic tet"
+             "\nen = Elastic net"
              "\ndt = Decision tree"
              "\n\n Default: en"
     )

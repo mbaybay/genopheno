@@ -31,7 +31,7 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
     # Split the data into testing and training data
     x = data_set.drop(labels=['phenotype'], axis=1)
     snp_columns = x.columns.values
-    if len(snp_columns) > max_snps:
+    if (max_snps is not None) and (len(snp_columns) > max_snps):
         print '[WARNING] Too many model SNPs ({}, configured max: {}). Dropping extra SNPs.'.format(len(snp_columns),
                                                                                                     max_snps)
         snp_columns = snp_columns[:max_snps]
@@ -41,7 +41,7 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, test_size=data_split/float(100), random_state=1, stratify=y
     )
-    print 'Model training with {} users and testing with {} users'.format(len(y_train), len(y_test))
+    #print 'Model training with {} users and testing with {} users'.format(len(y_train), len(y_test))
 
     # Convert classifications to 0 and 1
     #
@@ -55,6 +55,9 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
     imputer, x_train, x_test = __impute_data(x_train, x_test)
     model_config['imputer'] = imputer
 
+    # print data counts
+    __save_data_summary(pheno_map, y_train, y_test, len(snp_columns), output_dir)
+
     # Define model
     model_config['no_interactions'] = no_interactions
     model_desc = build_model_desc(snp_columns, no_interactions)
@@ -62,7 +65,7 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
     x_test = dmatrix(model_desc, pd.DataFrame(x_test, columns=snp_columns))
 
     # Fit training data to model
-    grid = GridSearchCV(model, param_grid=param_grid)
+    grid = GridSearchCV(model, param_grid=param_grid, cv=3, verbose=True)     # cv: 3-Fold Cross Validation
     grid.fit(x_train, y_train)
     best_model = grid.best_estimator_
     model_config['model'] = best_model
@@ -104,7 +107,7 @@ def __save_confusion_matrix(y_true, y_pred, output_dir, file_suffix):
     specificity = float(true_neg)/float(true_neg + false_pos)
 
     metrics = 'Confusion Matrix Metrics: {}    Accuracy:    {}{}    Sensitivity: {}{}    Specificity: {}{}    ' \
-              'TPR: {}{}    TNR: {}{}    FPR: {}{}    FNR: {}{}'\
+              'TP: {}{}    TN: {}{}    FP: {}{}    FN: {}{}'\
         .format(linesep, np.round(accuracy, 3),
                 linesep, np.round(sensitivity, 3),
                 linesep, np.round(specificity, 3),
@@ -263,3 +266,41 @@ def __save_roc(y_true, y_pred, output_dir):
     plt.legend(loc="lower right")
     plt.savefig(path.join(output_dir, 'roc.png'))
     plt.close()
+
+
+def __save_data_summary(pheno_map, y_train, y_test, n_snps, output_dir):
+    # counts for phenotypes
+    n_neg = len(y_train[y_train == 0]) + len(y_test[y_test == 0])
+    n_pos = len(y_train[y_train == 1]) + len(y_test[y_test == 1])
+    total = n_neg + n_pos
+
+    # percent of phenotypes in data
+    p_neg = np.round(float(n_neg) / float(total) * 100, 1)
+    p_pos = np.round(float(n_pos) / float(total) * 100, 1)
+
+    # negative and positive labels
+    neg = pheno_map[0]
+    pos = pheno_map[1]
+
+    # model data counts
+    n_train = len(y_train)
+    n_test = len(y_test)
+
+    # format summary
+    pheno_summary = "-- Data Summary --{}\tNegative ({}):\t{} ({}%){}\tPositive ({}):\t{} ({}%){}\tTOTAL:\t{}{}"\
+        .format(linesep, neg, n_neg, p_neg,
+                linesep, pos, n_pos, p_pos,
+                linesep, total, linesep)
+    count_summary = "Training Count:\t{}{}Test Count:\t{}{}Number of SNP Features:\t{}{}"\
+        .format(n_train, linesep,
+                n_test, linesep,
+                n_snps, linesep)
+
+    print pheno_summary
+    print count_summary
+
+    # write to file
+    with open(path.join(output_dir, 'data_summary.txt'), 'w') as summary_file:
+        summary_file.write(pheno_summary)
+        summary_file.write(count_summary)
+    summary_file.close()
