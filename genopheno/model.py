@@ -4,7 +4,7 @@ import re
 
 import pandas as pd
 
-from genopheno.snp_selectors import mutation_difference
+from genopheno.models.snp_selectors import mutation_difference
 from models import elastic_net, decision_tree, random_forest
 from util import timed_invoke, expand_path, clean_output
 
@@ -35,8 +35,7 @@ def __read_phenotype_input(input_dir):
         # add the data frame to the collection of preprocessed phenotypes
         phenotype = f[len(file_prefix):len(f) - len('.csv.gz')]
         phenotypes[phenotype] = df
-        print "{} users and {} SNPs for phenotype '{}'"\
-            .format(len(df.columns)-5, df.shape[0], phenotype)
+        print "{} users and {} SNPs for phenotype '{}'".format(len(df.columns)-4, df.shape[0], phenotype)
 
     if len(phenotypes) == 0:
         raise ValueError('No preprocessed files in directory "{}". '
@@ -103,7 +102,7 @@ if __name__ == '__main__':
         default=40,
         help="The maximum percentage of missing or invalid user observations a SNP can have before it is not "
              "considered as a feature in the model."
-             "\n\nDefault: 40"  # TODO: try 60
+             "\n\nDefault: 40"
     )
 
     parser.add_argument(
@@ -118,12 +117,12 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "--diff-thresh",
-        "-dt",
+        "--abs-diff-thresh",
+        "-adt",
         metavar="percent",
         type=float,
         default=20,
-        help="The difference threshold required for the SNP to be selected, as a percent of the higher value."
+        help="The difference threshold required for the SNP to be selected, in percentage points."
              "\n\nDefault: 20"
     )
 
@@ -133,15 +132,15 @@ if __name__ == '__main__':
         metavar="percent",
         type=float,
         default=5,
-        help="The magnitude of the difference threshold, in percentage points. This is the "
+        help="The magnitude of the difference threshold, as a percent of the lower value. This is the "
              "minimum value for the difference in mutation percentage divided by the minimum "
              "mutation value out of the two phenotypes. The purpose of this is to filter out "
              "SNPs where the change meets the difference threshold, but is still a small "
-             "magnitude. For example, if the mutation difference is 5%%, but the SNP mutation "
-             "levels for each phenotype are 100%% and 95%% then this is less meaningful than if "
-             "the mutation levels were 6%% and 1%%. The magnitude threshold is meant to filter "
-             "out the SNP where the mutations are 100%% and 95%% and keep the SNP where the "
-             "mutations are 6%% and 1%%."
+             "magnitude. For example, if the mutation difference is 5 percentage points, but the SNP mutation "
+             "levels for each phenotype are 100% and 95% then this is less meaningful than if "
+             "the mutation levels were 6% and 1%. The magnitude threshold is meant to filter "
+             "out the SNP where the mutations are 100% and 95% and keep the SNP where the "
+             "mutations are 6% and 1%."
              "\n\nDefault: 5"
     )
 
@@ -203,5 +202,5 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    run(args.preprocessed, args.invalid_snp_thresh, args.invalid_user_thresh, args.diff_thresh, args.magnitude_thresh,
-        args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.output)
+    run(args.preprocessed, args.invalid_snp_thresh, args.invalid_user_thresh, args.abs_diff_thresh,
+        args.magnitude_thresh, args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.output)
