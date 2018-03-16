@@ -1,9 +1,9 @@
 # Summary
 
-This project applies machine learning to publicly available genomic data to predict phenotype and identify Single Nucleotide Polymorphisms (SNPs) that are most influential. 
+This project applies machine learning to publicly available genomic data to predict phenotype and identify Single Nucleotide Polymorphisms (SNPs) that are most influential.
 The method requires no domain knowledge and can be used with any binary phenotype classification.
 
-As a proof of concept, this application was used to predict eye color using 436 users from self-reported data on openSNP. 
+As a proof of concept, this application was used to predict eye color using 436 users from self-reported data on openSNP.
 Using the default settings, the model achieved a 90% accuracy and 0.95 AUC for the ROC curve.
 
 The model correctly identified HERC2 as the most influential gene and identified the polygenic relationship between genes
@@ -11,7 +11,7 @@ HERC2 and OCA2.
 
 ![ROC curve for eye color preductions](images/roc_eye_color.png)
 
-# Prerequisites 
+# Prerequisites
 
 ## Matplotlib
 
@@ -20,12 +20,12 @@ requirements for matplotlib.
 
 ## Graphviz
 
-Graphviz is used to generate a decision tree visualization when using the decision tree model flag. 
+Graphviz is used to generate a decision tree visualization when using the decision tree model flag.
 Download and install the executable [from here](https://graphviz.gitlab.io/download/).
 
 ## Python Packages
 
-It is recommended to install this application in a virtual environment. 
+It is recommended to install this application in a virtual environment.
 To create and activate the virtual environment run:
 
 ```commandline
@@ -56,10 +56,10 @@ pip install -r requirements.txt
 
 # Running with Sample Data
 
-Out of the box, the application comes with sample data to predict eye color. 
+Out of the box, the application comes with sample data to predict eye color.
 
 The commands in this section assume the virtual environment from the prerequisites step is activated and that the
-current directory genopheno/genopheno (the root package directory). 
+current directory genopheno/genopheno (the root package directory).
 Execute the following commands to use the sample data and default model settings.
 
 ```commandline
@@ -73,12 +73,12 @@ python model.py
 python predict.py
 ```
 
-Note, there is not enough data to produce a well trained model. 
+Note, there is not enough data to produce a well trained model.
 The data is included as a quick way to understand how to run the application.
 
 # Running the Application
 
-The application is broken down into three steps, each with their own CLI.
+The application is broken down into three steps, each with their own command-line interface.
 
 1. Preprocessing the genomic data. This step converts user genotypes at each SNP to a mutation count.
 2. Building the model. This step uses the preprocessed data to build a model to predict phenotype.
@@ -86,7 +86,7 @@ The application is broken down into three steps, each with their own CLI.
 
 The commands in this section assume the virtual environment from the prerequisites step is activated and that the
 current directory genopheno/genopheno (the root package directory).
- 
+
 ## Preprocessing
 
 The application includes SNP data from [dbSNP](https://www.ncbi.nlm.nih.gov/projects/SNP/) that will be used for SNP
@@ -109,11 +109,11 @@ python preprocess.py --help
 ```
 
 ### Custom Input Data
-User genomic file names must start with the numeric user ID followed by an underscore and end 
-with either 23andme.txt or ancestry.txt (i.e. user44_file19_yearofbirth_1970_sex_XY.23andme.txt). 
+User genomic file names must start with the numeric user ID followed by an underscore and end
+with either 23andme.txt or ancestry.txt (i.e. user44_file19_yearofbirth_1970_sex_XY.23andme.txt).
 
-The known phenotypes file must contain columns "user_id,phenotype". The user_id must be the numeric id that matches 
-the numeric id in the genomic file name (i.e. 44). The phenotype column can contain any binary phenotype classification 
+The known phenotypes file must contain columns "user_id,phenotype". The user_id must be the numeric id that matches
+the numeric id in the genomic file name (i.e. 44). The phenotype column can contain any binary phenotype classification
 (i.e. blue_green/brown for eye color).
 
 
@@ -122,14 +122,14 @@ the numeric id in the genomic file name (i.e. 44). The phenotype column can cont
 To build the model, use the output of the preprocessed step. If no preprocessed directory is supplied it uses the default
 output directory of the preprocess step.
 
-SNPs are features in the model and are selected by identifying 
+SNPs are features in the model and are selected by identifying
 significant mutation differences between the negative and positive phenotype classifications. The model includes
 main effects for each selected SNP and optionally interaction effects between each selected SNP.
 
 To build the model with a custom threshold for SNP selection and threshold for missing SNP data run:
 
 ```commandline
-python model.py --diff-thresh 35 --invalid-snp-thresh 50
+python model.py --absolute-diff-thresh 35 --invalid-snp-thresh 50
 ```
 
 There are more flags to customize the model. See the CLI help.
