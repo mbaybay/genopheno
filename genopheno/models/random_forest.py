@@ -12,8 +12,8 @@ def build_model(dataset, data_split, no_interactions, negative, max_snps, output
     param_grid = {
         "criterion": ["gini", "entropy"],
         "n_estimators": [500, 1000, 3000],
-        "max_depth": [None, 4, 5, 6, 7, 8],
-        "max_features": ["sqrt", .3, .4, .5]        # sqrt is known for use in classification; same as "auto" config
+        "max_depth": [None, 7, 8],
+        "max_features": ["sqrt", .3, .4]        # sqrt is known for use in classification; same as "auto" config
     }
 
     common.build_model(
