@@ -28,19 +28,19 @@ def __remove_missing_data(pheno, snp_data, invalid_thresh):
 
     min_required = math.ceil((1 - invalid_thresh / float(100)) * users_count)
     snp_data.dropna(axis=0, thresh=min_required, inplace=True, subset=user_columns)
-    print "{} SNPs removed due to too many missing user observations for phenotype '{}'"\
-        .format(snp_count - snp_data.shape[0], pheno)
+    print "{} ({:.2f}%) SNPs removed due to too many missing user observations for phenotype '{}'"\
+        .format(snp_count - snp_data.shape[0], float(snp_data.shape[0]) / snp_count, pheno)
 
 
-def __filter_snps(row, diff_thresh, magnitude_thresh, selected_snps):
+def __filter_snps(row, abs_diff_thresh, relative_diff_thresh, selected_snps):
     """
     Determines if there is a significant mutation difference at each SNP between the two phenotype options.
     Each SNP contains the percentage of users with no, partial and full mutations. Each mutation level is compared
     respectively. If the mutation difference is greater than the defined difference and magnitude thresholds at any
     level, then the SNP is selected.
     :param row: The DataFrame row containing the mutation percentages. The index is the RSID.
-    :param diff_thresh: The difference threshold required for the SNP to be selected, in percentage points.
-    :param magnitude_thresh:  The magnitude of the difference threshold, in percentage points. This is the
+    :param abs_diff_thresh: The difference threshold required for the SNP to be selected, as a percentage of the lower value.
+    :param relative_diff_thresh:  The magnitude of the difference threshold, in percentage points. This is the
                               minimum value for the difference in mutation percentage divided by the minimum
                               mutation value out of the two phenotypes. The purpose of this is to filter out
                               SNPs where the change meets the difference threshold, but is still a small
@@ -52,6 +52,7 @@ def __filter_snps(row, diff_thresh, magnitude_thresh, selected_snps):
     :param selected_snps: A list containing the selected SNP RSIDs. If the row has a significant mutation difference,
                           then the RSID for this row will be added to the list.
     """
+    # TODO: modify relative diff thresh description
     snp_rsid = row.name
 
     for mutation_level in MUTATION_LEVELS:
@@ -63,11 +64,11 @@ def __filter_snps(row, diff_thresh, magnitude_thresh, selected_snps):
         pct_diff = abs(mutation_pct_a - mutation_pct_b)
 
         # Check if the difference is greater than the defined difference threshold
-        if pct_diff >= diff_thresh:
+        if pct_diff >= abs_diff_thresh:
             pct_min = min(mutation_pct_a, mutation_pct_b)
             if pct_min != 0:
                 # Check if the difference is greater than the defined magnitude threshold
-                if 100 * pct_diff / pct_min >= magnitude_thresh:
+                if 100 * pct_diff / pct_min >= relative_diff_thresh:
                     selected_snps.append(snp_rsid)
                     break
             else:
@@ -75,14 +76,14 @@ def __filter_snps(row, diff_thresh, magnitude_thresh, selected_snps):
                 break
 
 
-def __identify_mutated_snps(phenotypes, diff_thresh, magnitude_thresh):
+def __identify_mutated_snps(phenotypes, abs_diff_thresh, relative_diff_thresh):
     """
     Identifies SNPs of interest based on mutation differences between the two phenotypes.
     :param phenotypes: A dictionary of phenotypes where the key is the phenotype label and the value is the
                        DataFrame with the mutation information for all users with the phenotype.
-    :param diff_thresh: The minimum difference between SNP mutations for each phenotype to be selected.
+    :param abs_diff_thresh: The minimum difference between SNP mutations for each phenotype to be selected.
                         See the method __filter_snps for a more complete explanation.
-    :param magnitude_thresh: The minimum magnitude in the mutation difference between SNPs for each phenotype.
+    :param relative_diff_thresh: The minimum magnitude in the mutation difference between SNPs for each phenotype.
                              See the method __filter_snps for a more complete explanation.
     :return: A list of selected SNP RSIDs.
     """
@@ -98,7 +99,7 @@ def __identify_mutated_snps(phenotypes, diff_thresh, magnitude_thresh):
 
     # Identify selected SNPs
     selected_snps = []
-    merged.apply(__filter_snps, args=(diff_thresh, magnitude_thresh, selected_snps), axis=1)
+    merged.apply(__filter_snps, args=(abs_diff_thresh, relative_diff_thresh, selected_snps), axis=1)
 
     return selected_snps
 
@@ -125,14 +126,15 @@ def __format_selected_snps(pheno_label, pheno_df, selected_snps):
     return transposed_data
 
 
-def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, diff_thresh, magnitude_thresh):
+def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, abs_diff_thresh, relative_diff_thresh):
     """
     Function to return those SNPs that satisfy a criterion to check for differences between blue and brown SNPs
-    :param invalid_thresh The percentage of missing user observations a SNP can have before it is removed
-    :param invalid_user_thresh The acceptable percentage of missing data before a user is discarded
-    :param diff_thresh: Minimum difference in percentage points of mutated alleles between different phenotypes in order
+    :param phenotypes: A map of phenotypes where the key is the phenotype ID and the value is the phenotype data frame.
+    :param invalid_thresh: The percentage of missing user observations a SNP can have before it is removed
+    :param invalid_user_thresh: The acceptable percentage of missing data before a user is discarded
+    :param abs_diff_thresh: Minimum difference in percentage points of mutated alleles between different phenotypes in order
     to include a SNP in set of candidates
-    :param magnitude_thresh: # Minimum percent difference in percentage of mutated alleles between different phenotypes
+    :param relative_diff_thresh: # Minimum percent difference in percentage of mutated alleles between different phenotypes
     for a SNP in order to include a SNP in set of candidates
     :return: A DataFrame where each row is a user and each column is a SNP.
     The value is the number of mutations (0,1,2).
@@ -142,7 +144,7 @@ def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, diff_thresh,
         __remove_missing_data(pheno, pheno_df, invalid_thresh)
 
     # Select snps based on mutation differences between phenotypes
-    selected_snps = __identify_mutated_snps(phenotypes, diff_thresh, magnitude_thresh)
+    selected_snps = __identify_mutated_snps(phenotypes, abs_diff_thresh, relative_diff_thresh)
     print '{} SNPs with mutation differences identified'.format(len(selected_snps))
 
     # Generate data frame for each phenotype using the selected SNPs
@@ -158,7 +160,7 @@ def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, diff_thresh,
     snp_count = merged.shape[1] - 1
     min_obs = math.ceil((1 - invalid_user_thresh / float(100)) * snp_count)
     merged.dropna(axis=0, thresh=min_obs, inplace=True)
-    print '{} users dropped due to too many missing observations. Remaining users: {}'\
-        .format(user_count - merged.shape[0], merged.shape[0])
+    print '{} users dropped due to too many missing observations'.format(user_count - merged.shape[0])
+    print "Model Data contains {} users and {} SNPs".format(merged.shape[0], snp_count)
 
     return merged
