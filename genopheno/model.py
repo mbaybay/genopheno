@@ -44,16 +44,16 @@ def __read_phenotype_input(input_dir):
     return phenotypes
 
 
-def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, diff_thresh, magnitude_thresh, data_split,
+def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, abs_diff_thresh, relative_diff_thresh, data_split,
         no_interactions, negative, max_snps, model_id, output_dir):
     """
     Builds a model to predict phenotype
     :param preprocessed_dir: The directory containing the preprocessed data
     :param invalid_thresh: The acceptable percentage of missing data before a SNP is discarded
     :param invalid_user_thresh: The acceptable percentage of missing data before a user is discarded
-    :param diff_thresh: The mutation percent difference between phenotypes to be selected as a model feature
-    :param magnitude_thresh: The mutation percentage difference magnitude between phenotypes to be selected as a model
-    feature.
+    :param abs_diff_thresh: The mutation percent difference between phenotypes to be selected as a model feature
+    :param relative_diff_thresh: The relative difference in mutation percentage, calculated as a percent of the
+                                smaller mutation percent value.
     :param data_split: The percent data used for testing.
     :param no_interactions: If True the model will not contain interactions
     :param negative: The negative phenotype label
@@ -74,7 +74,7 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, diff_thresh, magn
 
     phenotypes = timed_invoke('reading the preprocessed files', lambda: __read_phenotype_input(preprocessed_dir))
     data_set = timed_invoke('creating model data set', lambda: mutation_difference.create_dataset(
-                               phenotypes, invalid_thresh, invalid_user_thresh, diff_thresh, magnitude_thresh)
+                               phenotypes, invalid_thresh, invalid_user_thresh, abs_diff_thresh, relative_diff_thresh)
                             )
     timed_invoke('building model', lambda: build_model(data_set, data_split, no_interactions, negative, max_snps,
                                                        output_dir))
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "--abs-diff-thresh",
+        "--absolute-diff-thresh",
         "-adt",
         metavar="percent",
         type=float,
@@ -127,14 +127,13 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "--magnitude-thresh",
-        "-mt",
+        "--relative-diff-thresh",
+        "-rdt",
         metavar="percent",
         type=float,
         default=5,
-        help="The magnitude of the difference threshold, as a percent of the lower value. This is the "
-             "minimum value for the difference in mutation percentage divided by the minimum "
-             "mutation value out of the two phenotypes. The purpose of this is to filter out "
+        help="The relative difference threshold. This is the absolute difference in mutation percentage divided "
+             "by the minimum mutation value out of the two phenotypes. The purpose of this is to filter out "
              "SNPs where the change meets the difference threshold, but is still a small "
              "magnitude. For example, if the mutation difference is 5 percentage points, but the SNP mutation "
              "levels for each phenotype are 100% and 95% then this is less meaningful than if "
@@ -202,5 +201,5 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    run(args.preprocessed, args.invalid_snp_thresh, args.invalid_user_thresh, args.abs_diff_thresh,
-        args.magnitude_thresh, args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.output)
+    run(args.preprocessed, args.invalid_snp_thresh, args.invalid_user_thresh, args.absolute_diff_thresh,
+        args.relative_diff_thresh, args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.output)
