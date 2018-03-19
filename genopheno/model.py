@@ -73,6 +73,8 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, abs_diff_thresh, 
         raise ValueError('Model Id "{}" is not valid'.format(model_id))
 
     phenotypes = timed_invoke('reading the preprocessed files', lambda: __read_phenotype_input(preprocessed_dir))
+
+    #TODO: create relative diff using relative_diff_thresh --> linear (y=-1.05x + 105) OR supplied by user (m=0, b=user-provided)
     data_set = timed_invoke('creating model data set', lambda: mutation_difference.create_dataset(
                                phenotypes, invalid_thresh, invalid_user_thresh, abs_diff_thresh, relative_diff_thresh)
                             )
