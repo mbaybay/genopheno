@@ -4,7 +4,7 @@ import re
 
 import pandas as pd
 
-from genopheno.models.snp_selectors import mutation_difference
+from models.snp_selectors import mutation_difference
 from models import elastic_net, decision_tree, random_forest
 from util import timed_invoke, expand_path, clean_output
 
