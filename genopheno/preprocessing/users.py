@@ -1,12 +1,9 @@
 import os
 import re
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
-from genopheno.models.snp_selectors import mutation_difference
 
 MUTATION_LEVELS = ['nm', 'pm', 'fm']
 
