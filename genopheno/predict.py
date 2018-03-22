@@ -3,6 +3,7 @@ import os
 import pickle
 import pandas as pd
 from preprocessing.users import UserPhenotypes, User
+from preprocessing.snp import extract_rsid, format_snps
 from models.common import build_model_desc
 from patsy import dmatrix
 from util import timed_invoke, expand_path, clean_output
@@ -33,7 +34,9 @@ def run(users_dir, init_dir, model_dir, output_dir):
 
     # Filter snps to only include selected snps
     snp_columns = model_config['snps']
-    snp_details = snp_details[snp_details['Rsid'].isin(snp_columns)]
+    selected_rsids = map(extract_rsid, snp_columns)
+    snp_details = snp_details[snp_details['Rsid'].isin(selected_rsids)]
+
 
     # Predict for each user
     imputer = model_config['imputer']
@@ -45,6 +48,7 @@ def run(users_dir, init_dir, model_dir, output_dir):
 
     def calc_mutations(user):
         mutations = user.allele_transformation(snp_details, how='right')
+        mutations['Rsid'] = mutations['Rsid'].apply(format_snps, args=(snp_details,))
         mutations.set_index('Rsid', inplace=True)
         mutations = mutations.transpose()
 
