@@ -74,7 +74,7 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, abs_diff_thresh, 
 
     phenotypes = timed_invoke('reading the preprocessed files', lambda: __read_phenotype_input(preprocessed_dir))
 
-    #TODO: create relative diff using relative_diff_thresh --> linear (y=-1.05x + 105) OR supplied by user (m=0, b=user-provided)
+    #TODO: create relative_diff_thresh using --> linear (y=-1.05x + 105) OR supplied by user (m=0, b=user-provided)
     data_set = timed_invoke('creating model data set', lambda: mutation_difference.create_dataset(
                                phenotypes, invalid_thresh, invalid_user_thresh, abs_diff_thresh, relative_diff_thresh)
                             )
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         "--preprocessed",
         "-p",
         metavar="<directory path>",
-        default="resources/data/preprocessed",
+        default="resources" + os.sep + "full_data" + os.sep + "preprocessed",
         help="The directory containing the output data from the initialization phase."
              "\n\nDefault: resources/data/preprocessed"
     )
@@ -101,10 +101,10 @@ if __name__ == '__main__':
         "-it",
         metavar="percent",
         type=float,
-        default=40,
+        default=60,
         help="The maximum percentage of missing or invalid user observations a SNP can have before it is not "
              "considered as a feature in the model."
-             "\n\nDefault: 40"
+             "\n\nDefault: 60"
     )
 
     parser.add_argument(
@@ -196,7 +196,7 @@ if __name__ == '__main__':
         "--output",
         "-o",
         metavar="<directory path>",
-        default="resources/data/model",
+        default="resources" + os.sep + "data" + os.sep + "model",
         help="The directory that the output files should be written to. This will include all files required for the "
              "machine learning input."
              "\n\nDefault: resources/data/model"

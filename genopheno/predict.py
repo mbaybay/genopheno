@@ -94,7 +94,7 @@ if __name__ == '__main__':
         "--users-dir",
         "-u",
         metavar="<directory path>",
-        default="resources/data/users",
+        default="resources" + os.sep + "data" + os.sep + "users",
         help="The directory that contains the users genomic data to predict the phenotypes for."
              "\n\nDefault: resources/data/users"
     )
@@ -103,7 +103,7 @@ if __name__ == '__main__':
         "--init-dir",
         "-i",
         metavar="<directory path>",
-        default="resources/data/preprocessed",
+        default="resources" + os.sep + "full_data" + os.sep + "preprocessed",
         help="The directory that the preprocessed files are in."
              "\n\nDefault: resources/data/preprocessed"
     )
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         "--model-dir",
         "-m",
         metavar="<directory path>",
-        default="resources/data/model",
+        default="resources" + os.sep + "data" + os.sep + "model",
         help="The directory that the model files are in."
              "\n\nDefault: resources/data/model"
     )
@@ -121,7 +121,7 @@ if __name__ == '__main__':
         "--output",
         "-o",
         metavar="<directory path>",
-        default="resources/data/prediction",
+        default="resources" + os.sep + "data" + os.sep + "prediction",
         help="The directory that the output files should be written to."
              "\n\nDefault: resources/data/prediction"
     )
