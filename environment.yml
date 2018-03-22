@@ -1,6 +1,5 @@
 name: genopheno_py27
 dependencies:
-  - python == 2.7
   - matplotlib
   - pandas
   - numpy

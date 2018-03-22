@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Create environment:
-conda env create --force
+conda create -n genopheno_py27 python=2.7 -f environment.yml
 
 # Start environment:
 source activate genopheno_py27
