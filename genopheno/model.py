@@ -93,7 +93,7 @@ if __name__ == '__main__':
         metavar="<directory path>",
         default="resources" + os.sep + "full_data" + os.sep + "preprocessed",
         help="The directory containing the output data from the initialization phase."
-             "\n\nDefault: resources/data/preprocessed"
+             "\n\nDefault: resources/full_data/preprocessed"
     )
 
     parser.add_argument(

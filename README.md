@@ -4,24 +4,13 @@ This project applies machine learning to publicly available genomic data to pred
 The method requires no domain knowledge and can be used with any binary phenotype classification.
 
 As a proof of concept, this application was used to predict eye color using 436 users from self-reported data on openSNP.
-Using the default settings, the model achieved a 90% accuracy and 0.95 AUC for the ROC curve.
+Using the default settings, the model achieved a 92% accuracy and 0.95 AUC for the ROC curve.
 
 The model correctly identified HERC2 as the most influential gene and identified the polygenic relationship between genes
 HERC2 and OCA2.
 
-![ROC curve for eye color preductions](images/roc_eye_color.png)
 
 # Prerequisites
-
-## Matplotlib
-
-Matplotlib is used to generate a ROC curve after the model is built. [See the documentation](https://matplotlib.org/faq/installing_faq.html#installation) for operating system specific
-requirements for matplotlib.
-
-## Graphviz
-
-Graphviz is used to generate a decision tree visualization when using the decision tree model flag.
-Download and install the executable [from here](https://graphviz.gitlab.io/download/).
 
 ## Python Packages
 
@@ -102,11 +91,18 @@ Additionally, to use custom SNP data run:
 python preprocess.py --user-geno mydata/users --known-phenos mydata/phenos.csv --snp mydata/snp
 ```
 
-See the CLI for additional flags.
+See the CLI for additional flags or refer to the table below.
 
 ```commandline
 python preprocess.py --help
 ```
+
+|Argument|Short|Description|
+|:--|:--|:--|
+|**--usergeno**|**-u**|The directory containing user genomic data. Each file contains data for one user. 23andMe and Ancestry.com data formats are supported.|
+|**--known-phenos**|**-p**|The file path to the file that contains the known phenotypes. This is used to train the model. This must be a CSV file with the following format with columns user_id and phenotype.|
+|**--snp**|**-s**|The directory containing the SNP data for each genome. The supported file format is VCF.|
+|**--output**|**-o**|The directory that the out files should be written to. This will include all files required for the machine learning input.|
 
 ### Custom Input Data
 User genomic file names must start with the numeric user ID followed by an underscore and end
@@ -137,6 +133,18 @@ There are more flags to customize the model. See the CLI help.
 ```commandline
 python model.py --help
 ```
+
+|Argument|Short|Description|
+|:--|:--|:--|
+|**--preprocessed**|**-p**|The directory containing the output data from the initialization phase. Default: resources/full_data/preprocessed|
+|**--invalid-snp-thresh**|**-it**|The maximum percentage of missing or invalid user observations a SNP can have before it is not considered as a feature in the model|
+|**--invalid-user-thresh**|**-iu**|The maximum percentage of missing or invalid SNP observations a user can have before it is not considered as a valid example in the model.|
+|**--absolute-diff-thresh**|**-adt**|The difference threshold required for the SNP to be selected, in percentage points.|
+|**--relative-diff-thresh**|**-rdt**|The relative difference threshold. This is the absolute difference in mutation percentage divided by the minimum mutation value out of the two phenotypes.|
+|**--split**|**s**|The percentage of users to use as test data.|
+|**--no-interactions**|**-ni**|If set then interactions will not be included in the model.|
+|**--negative**|**-n**|The phenotype value that should be considered as the negative case.|
+|**--max-snps**|**-ms**|The maximum number of SNPs to include in the model|
 
 ### Output
 
@@ -171,6 +179,14 @@ See the CLI for additional flags.
 ```commandline
 python predict.py --help
 ```
+
+|Argument|Short|Description|
+|:--|:--|:--|
+|**--users-dir**|**-u**|The directory that contains the users genomic data to predict the phenotypes for. Default: resources/data/users|
+|**--init-dir**|**-i**|The directory that the preprocessed files are in. Default: resources/full_data/preprocessed|
+|**--model-dir**|**-m**|The directory that the model files are in. Default: resources/data/model|
+|**--output**|**-o**|The directory that the output files should be written to. Default: resources/data/prediction|
+
 
 ### Output
 
