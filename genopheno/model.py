@@ -44,7 +44,7 @@ def __read_phenotype_input(input_dir):
     return phenotypes
 
 
-def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, abs_diff_thresh, relative_diff_thresh, data_split,
+def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, relative_diff_thresh, data_split,
         no_interactions, negative, max_snps, model_id, output_dir):
     """
     Builds a model to predict phenotype
@@ -76,7 +76,7 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, abs_diff_thresh, 
 
     #TODO: create relative_diff_thresh using --> linear (y=-1.05x + 105) OR supplied by user (m=0, b=user-provided)
     data_set = timed_invoke('creating model data set', lambda: mutation_difference.create_dataset(
-                               phenotypes, invalid_thresh, invalid_user_thresh, abs_diff_thresh, relative_diff_thresh)
+                               phenotypes, invalid_thresh, invalid_user_thresh, relative_diff_thresh)
                             )
     timed_invoke('building model', lambda: build_model(data_set, data_split, no_interactions, negative, max_snps,
                                                        output_dir))
@@ -84,6 +84,7 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, abs_diff_thresh, 
 
 
 if __name__ == '__main__':
+
     # Parse input
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
@@ -133,7 +134,6 @@ if __name__ == '__main__':
         "-rdt",
         metavar="percent",
         type=float,
-        default=5,
         help="The relative difference threshold. This is the absolute difference in mutation percentage divided "
              "by the minimum mutation value out of the two phenotypes. The purpose of this is to filter out "
              "SNPs where the change meets the difference threshold, but is still a small "
@@ -203,5 +203,5 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    run(args.preprocessed, args.invalid_snp_thresh, args.invalid_user_thresh, args.absolute_diff_thresh,
-        args.relative_diff_thresh, args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.output)
+    run(args.preprocessed, args.invalid_snp_thresh, args.invalid_user_thresh, args.relative_diff_thresh,
+        args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.output)

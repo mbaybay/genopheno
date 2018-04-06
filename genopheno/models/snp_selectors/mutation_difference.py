@@ -1,3 +1,4 @@
+
 import numpy as np
 import pandas as pd
 import math
@@ -29,7 +30,7 @@ def __remove_missing_data(pheno, snp_data, invalid_thresh):
     min_required = math.ceil((1 - invalid_thresh / float(100)) * users_count)
     snp_data.dropna(axis=0, thresh=min_required, inplace=True, subset=user_columns)
     print "{} ({:.2f}%) SNPs removed due to too many missing user observations for phenotype '{}'"\
-        .format(snp_count - snp_data.shape[0], float(snp_data.shape[0]) / snp_count, pheno)
+        .format(snp_count - snp_data.shape[0], float(snp_count - snp_data.shape[0]) / snp_count * 100, pheno)
 
 
 def __filter_snps(row, abs_diff_thresh, relative_diff_thresh, selected_snps):
@@ -76,7 +77,51 @@ def __filter_snps(row, abs_diff_thresh, relative_diff_thresh, selected_snps):
                 break
 
 
-def __identify_mutated_snps(phenotypes, abs_diff_thresh, relative_diff_thresh):
+def __select_snps(snp_pheno_pcts, m=-1.05, b=105):
+    """
+
+    :param snp_pheno_pcts:
+    :param selected_snps:
+    :param m:
+    :param b:
+    :return:
+    """
+
+    selected_snps = set()
+
+    for mutation_level in MUTATION_LEVELS:
+        thresh_df = pd.DataFrame()
+        # extract mutation columns
+        mutation_pct_a = snp_pheno_pcts['pct_{}_a'.format(mutation_level)].round(3)
+        mutation_pct_b = snp_pheno_pcts['pct_{}_b'.format(mutation_level)].round(3)
+
+        # calc min, relative_diff, linear_thresh
+        thresh_df["min"] = pd.concat([mutation_pct_a, mutation_pct_b], axis=1).min(axis=1)
+        # handle min value cases
+        thresh_df["min"] = thresh_df["min"].apply(lambda min_val: 5 if min_val < 5 else min_val)
+        thresh_df["abs_diff"] = np.abs(mutation_pct_a - mutation_pct_b)
+        thresh_df["relative_diff"] = thresh_df["abs_diff"] / thresh_df["min"] * 100
+        thresh_df["linear_thresh"] = m * thresh_df["abs_diff"] + b
+        thresh_df["linear_thresh"] = thresh_df["linear_thresh"].apply(lambda thresh: 10 if thresh < 10 else thresh)
+
+        # TODO: log which conditions are including more snps
+        # print("Mutation: {}\n min>80: {}\t relative>linear: {}\t relative&min: {}".format(
+        #     mutation_level,
+        #     thresh_df[thresh_df["min"] > 80].shape[0],
+        #     thresh_df[thresh_df["relative_diff"] > thresh_df["linear_thresh"]].shape[0],
+        #     thresh_df[(thresh_df["min"] > 80) & (thresh_df["relative_diff"] > thresh_df["linear_thresh"])].shape[0]
+        # ))
+
+        # filter snps based on min > 80 AND relative > thresh
+        selected_ids = thresh_df[((thresh_df["abs_diff"] >= 5) & (thresh_df["abs_diff"] <= 80)) &
+                                 (thresh_df["relative_diff"] > thresh_df["linear_thresh"])].index
+        # append selected snps to selected_snps array
+        selected_snps = selected_snps.union(snp_pheno_pcts.loc[selected_ids].index)
+
+    return list(selected_snps)
+
+
+def __identify_mutated_snps(phenotypes, relative_diff_thresh):
     """
     Identifies SNPs of interest based on mutation differences between the two phenotypes.
     :param phenotypes: A dictionary of phenotypes where the key is the phenotype label and the value is the
@@ -97,9 +142,11 @@ def __identify_mutated_snps(phenotypes, abs_diff_thresh, relative_diff_thresh):
     merged = pheno_df_a[mutation_columns].merge(pheno_df_b[mutation_columns], left_index=True, right_index=True,
                                                 suffixes=('_a', '_b'))
 
-    # Identify selected SNPs
-    selected_snps = []
-    merged.apply(__filter_snps, args=(abs_diff_thresh, relative_diff_thresh, selected_snps), axis=1)
+    # TODO: logger for which thresh option
+    if relative_diff_thresh:
+        selected_snps = __select_snps(merged, m=0, b=relative_diff_thresh)
+    else:
+        selected_snps = __select_snps(merged)
 
     return selected_snps
 
@@ -126,7 +173,7 @@ def __format_selected_snps(pheno_label, pheno_df, selected_snps):
     return transposed_data
 
 
-def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, abs_diff_thresh, relative_diff_thresh):
+def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, relative_diff_thresh):
     """
     Function to return those SNPs that satisfy a criterion to check for differences between blue and brown SNPs
     :param phenotypes: A map of phenotypes where the key is the phenotype ID and the value is the phenotype data frame.
@@ -144,7 +191,7 @@ def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, abs_diff_thr
         __remove_missing_data(pheno, pheno_df, invalid_thresh)
 
     # Select snps based on mutation differences between phenotypes
-    selected_snps = __identify_mutated_snps(phenotypes, abs_diff_thresh, relative_diff_thresh)
+    selected_snps = __identify_mutated_snps(phenotypes, relative_diff_thresh)
     print '{} SNPs with mutation differences identified'.format(len(selected_snps))
 
     # Generate data frame for each phenotype using the selected SNPs

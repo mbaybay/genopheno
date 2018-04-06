@@ -9,6 +9,13 @@ def build_model(dataset, data_split, no_interactions, negative, max_snps, output
         'features': save_features
     }
 
+    default_params = {
+        "criterion": ["entropy"],
+        "n_estimators": [3000],
+        "max_depth": [None],
+        "max_features": ["sqrt"]
+    }
+
     param_grid = {
         "criterion": ["gini", "entropy"],
         "n_estimators": [500, 1000, 3000],
