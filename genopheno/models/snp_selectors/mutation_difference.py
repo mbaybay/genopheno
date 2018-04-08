@@ -3,6 +3,9 @@ import numpy as np
 import pandas as pd
 import math
 
+import logging
+logger = logging.getLogger("root")
+
 
 """
 The different possible mutation levels.
@@ -29,8 +32,8 @@ def __remove_missing_data(pheno, snp_data, invalid_thresh):
 
     min_required = math.ceil((1 - invalid_thresh / float(100)) * users_count)
     snp_data.dropna(axis=0, thresh=min_required, inplace=True, subset=user_columns)
-    print "{} ({:.2f}%) SNPs removed due to too many missing user observations for phenotype '{}'"\
-        .format(snp_count - snp_data.shape[0], float(snp_count - snp_data.shape[0]) / snp_count * 100, pheno)
+    logger.info("{} ({:.2f}%) SNPs removed due to too many missing user observations for phenotype '{}'"
+                .format(snp_count - snp_data.shape[0], float(snp_count - snp_data.shape[0]) / snp_count * 100, pheno))
 
 
 def __filter_snps(row, abs_diff_thresh, relative_diff_thresh, selected_snps):
@@ -86,6 +89,7 @@ def __select_snps(snp_pheno_pcts, m=-1.05, b=105):
     :param b:
     :return:
     """
+    logger.info("thresh = {}*max_pct + {}".format(m, b))
 
     selected_snps = set()
 
@@ -144,6 +148,7 @@ def __identify_mutated_snps(phenotypes, relative_diff_thresh):
 
     # TODO: logger for which thresh option
     if relative_diff_thresh:
+        logger.info("using user defined threshold: {}".format(relative_diff_thresh))
         selected_snps = __select_snps(merged, m=0, b=relative_diff_thresh)
     else:
         selected_snps = __select_snps(merged)
@@ -192,7 +197,7 @@ def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, relative_dif
 
     # Select snps based on mutation differences between phenotypes
     selected_snps = __identify_mutated_snps(phenotypes, relative_diff_thresh)
-    print '{} SNPs with mutation differences identified'.format(len(selected_snps))
+    logger.info('{} SNPs with mutation differences identified'.format(len(selected_snps)))
 
     # Generate data frame for each phenotype using the selected SNPs
     final_datasets = []
@@ -207,7 +212,7 @@ def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, relative_dif
     snp_count = merged.shape[1] - 1
     min_obs = math.ceil((1 - invalid_user_thresh / float(100)) * snp_count)
     merged.dropna(axis=0, thresh=min_obs, inplace=True)
-    print '{} users dropped due to too many missing observations'.format(user_count - merged.shape[0])
-    print "Model Data contains {} users and {} SNPs".format(merged.shape[0], snp_count)
+    logger.info('{} users dropped due to too many missing observations'.format(user_count - merged.shape[0]))
+    logger.info("Model Data contains {} users and {} SNPs".format(merged.shape[0], snp_count))
 
     return merged

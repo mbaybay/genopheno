@@ -3,10 +3,14 @@ import os
 import re
 
 import pandas as pd
+import logging
+import logging.config
 
 from models.snp_selectors import mutation_difference
 from models import elastic_net, decision_tree, random_forest
-from util import timed_invoke, expand_path, clean_output
+from util import timed_invoke, expand_path, clean_output, setup_logger
+
+logger = logging.getLogger('root')
 
 MODELS = {
     'en': elastic_net.build_model,
@@ -35,7 +39,7 @@ def __read_phenotype_input(input_dir):
         # add the data frame to the collection of preprocessed phenotypes
         phenotype = f[len(file_prefix):len(f) - len('.csv.gz')]
         phenotypes[phenotype] = df
-        print "{} users and {} SNPs for phenotype '{}'".format(len(df.columns)-4, df.shape[0], phenotype)
+        logger.info("{} users and {} SNPs for phenotype '{}'".format(len(df.columns)-4, df.shape[0], phenotype))
 
     if len(phenotypes) == 0:
         raise ValueError('No preprocessed files in directory "{}". '
@@ -62,7 +66,6 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, relative_diff_thr
     """
     # Expand file paths
     preprocessed_dir = expand_path(preprocessed_dir)
-    output_dir = expand_path(output_dir)
 
     # Make sure output directory exists before doing work
     clean_output(output_dir)
@@ -80,7 +83,7 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, relative_diff_thr
                             )
     timed_invoke('building model', lambda: build_model(data_set, data_split, no_interactions, negative, max_snps,
                                                        output_dir))
-    print 'Output written to "{}"'.format(output_dir)
+    logger.info('Output written to "{}"'.format(output_dir))
 
 
 if __name__ == '__main__':
@@ -203,5 +206,8 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
+
+    setup_logger(args.output, args.model + "_model")
+
     run(args.preprocessed, args.invalid_snp_thresh, args.invalid_user_thresh, args.relative_diff_thresh,
         args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.output)
