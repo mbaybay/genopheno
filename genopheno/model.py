@@ -70,6 +70,8 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, relative_diff_thr
     # Make sure output directory exists before doing work
     clean_output(output_dir)
 
+    setup_logger(output_dir, model_id + "_model")
+
     # Get model
     build_model = MODELS.get(model_id)
     if not build_model:
@@ -206,8 +208,6 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-
-    setup_logger(args.output, args.model + "_model")
 
     run(args.preprocessed, args.invalid_snp_thresh, args.invalid_user_thresh, args.relative_diff_thresh,
         args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.output)

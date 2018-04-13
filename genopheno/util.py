@@ -5,11 +5,9 @@ logger = logging.getLogger('root')
 
 
 def setup_logger(output_dir, name):
-    # clean output
-    clean_output(output_dir)
     output_dir = expand_path(output_dir)
     log_filename = "{}.log".format(name)
-    filepath = expand_path(os.path.join(output_dir, log_filename))
+    filepath = os.path.join(output_dir, log_filename)
     logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': False,
@@ -30,7 +28,7 @@ def setup_logger(output_dir, name):
             },
             'file': {
                 'level': 'INFO',
-                'class': 'logging.handlers.RotatingFileHandler',
+                'class': 'logging.FileHandler',
                 'formatter': 'standard',
                 'filename': filepath,
                 'mode': 'a',
