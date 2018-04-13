@@ -80,7 +80,7 @@ def __filter_snps(row, abs_diff_thresh, relative_diff_thresh, selected_snps):
                 break
 
 
-def __select_snps(snp_pheno_pcts, m=-1.05, b=105):
+def __select_snps(snp_pheno_pcts, m=-1.14, b=111):
     """
 
     :param snp_pheno_pcts:
@@ -99,14 +99,17 @@ def __select_snps(snp_pheno_pcts, m=-1.05, b=105):
         mutation_pct_a = snp_pheno_pcts['pct_{}_a'.format(mutation_level)].round(3)
         mutation_pct_b = snp_pheno_pcts['pct_{}_b'.format(mutation_level)].round(3)
 
-        # calc min, relative_diff, linear_thresh
+        # calc min, max, abs_diff, relative_diff, linear_thresh
         thresh_df["min"] = pd.concat([mutation_pct_a, mutation_pct_b], axis=1).min(axis=1)
-        # handle min value cases
-        thresh_df["min"] = thresh_df["min"].apply(lambda min_val: 5 if min_val < 5 else min_val)
+        # set lower bound for min
+        # thresh_df["min"] = thresh_df["min"].apply(lambda min_val: 5 if min_val < 5 else min_val)
+        thresh_df["max"] = pd.concat([mutation_pct_a, mutation_pct_b], axis=1).min(axis=1)
         thresh_df["abs_diff"] = np.abs(mutation_pct_a - mutation_pct_b)
-        thresh_df["relative_diff"] = thresh_df["abs_diff"] / thresh_df["min"] * 100
-        thresh_df["linear_thresh"] = m * thresh_df["abs_diff"] + b
-        thresh_df["linear_thresh"] = thresh_df["linear_thresh"].apply(lambda thresh: 10 if thresh < 10 else thresh)
+        thresh_df["relative_diff"] = m * thresh_df["abs_diff"] + b
+        thresh_df["relative_diff"] = thresh_df["relative_diff"].apply(lambda thresh: 20 if thresh < 20 else thresh)
+        thresh_df["lower_thresh"] = (1 - (thresh_df["relative_diff"] / 100)) * thresh_df["max"]
+
+
 
         # TODO: log which conditions are including more snps
         # print("Mutation: {}\n min>80: {}\t relative>linear: {}\t relative&min: {}".format(
@@ -117,8 +120,10 @@ def __select_snps(snp_pheno_pcts, m=-1.05, b=105):
         # ))
 
         # filter snps based on min > 80 AND relative > thresh
-        selected_ids = thresh_df[((thresh_df["abs_diff"] >= 5) & (thresh_df["abs_diff"] <= 80)) &
-                                 (thresh_df["relative_diff"] > thresh_df["linear_thresh"])].index
+        # selected_ids = thresh_df[((thresh_df["abs_diff"] >= 5) & (thresh_df["abs_diff"] <= 80)) &
+        #                          (thresh_df["relative_diff"] > thresh_df["linear_thresh"])].index
+        # filter snps based on lower <= low_thresh
+        selected_ids = thresh_df[thresh_df["min"] <= thresh_df["lower_thresh"]].index
         # append selected snps to selected_snps array
         selected_snps = selected_snps.union(snp_pheno_pcts.loc[selected_ids].index)
 
