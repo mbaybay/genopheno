@@ -80,7 +80,8 @@ def __filter_snps(row, abs_diff_thresh, relative_diff_thresh, selected_snps):
                 break
 
 
-def __select_snps(snp_pheno_pcts, m=-1.14, b=111):
+def __select_snps(snp_pheno_pcts, m=-1.06, b=105):
+    # TODO: docs
     """
 
     :param snp_pheno_pcts:
@@ -89,7 +90,9 @@ def __select_snps(snp_pheno_pcts, m=-1.14, b=111):
     :param b:
     :return:
     """
-    logger.info("thresh = {}*max_pct + {}".format(m, b))
+
+    logger.info("thresh = {} * max + {}".format(m, b))
+    logger.info("calc min, max, relative_diff, lower_thresh")
 
     selected_snps = set()
 
@@ -99,33 +102,35 @@ def __select_snps(snp_pheno_pcts, m=-1.14, b=111):
         mutation_pct_a = snp_pheno_pcts['pct_{}_a'.format(mutation_level)].round(3)
         mutation_pct_b = snp_pheno_pcts['pct_{}_b'.format(mutation_level)].round(3)
 
-        # calc min, max, abs_diff, relative_diff, linear_thresh
+        # calc min, max, relative_diff, linear_thresh
         thresh_df["min"] = pd.concat([mutation_pct_a, mutation_pct_b], axis=1).min(axis=1)
-        # set lower bound for min
         # thresh_df["min"] = thresh_df["min"].apply(lambda min_val: 5 if min_val < 5 else min_val)
-        thresh_df["max"] = pd.concat([mutation_pct_a, mutation_pct_b], axis=1).min(axis=1)
-        thresh_df["abs_diff"] = np.abs(mutation_pct_a - mutation_pct_b)
-        thresh_df["relative_diff"] = m * thresh_df["abs_diff"] + b
+        thresh_df["max"] = pd.concat([mutation_pct_a, mutation_pct_b], axis=1).max(axis=1)
+        # filter out those with max < 5
+        thresh_df.drop(thresh_df[thresh_df["max"] < 5].index, axis=0, inplace=True)
+        # thresh_df["abs_diff"] = np.abs(mutation_pct_a - mutation_pct_b)
+        # thresh_df["relative_diff"] = m * thresh_df["abs_diff"] + b
+        thresh_df["relative_diff"] = m * thresh_df["max"] + b
         thresh_df["relative_diff"] = thresh_df["relative_diff"].apply(lambda thresh: 20 if thresh < 20 else thresh)
         thresh_df["lower_thresh"] = (1 - (thresh_df["relative_diff"] / 100)) * thresh_df["max"]
+        # thresh_df.to_csv("./thresh_df_{}.csv".format(mutation_level), header=True)
 
+        # logger.info("Mutation: {}\n\tmin<=lower_thresh: {}\n\t5 <= abs_diff <= 80: {}"
+        #             .format(mutation_level, thresh_df[thresh_df["min"] <= thresh_df["lower_thresh"]].shape[0],
+        #                     thresh_df[(thresh_df["abs_diff"] >= 5) & (thresh_df["abs_diff"] <= 80)].shape[0]))
 
-
-        # TODO: log which conditions are including more snps
-        # print("Mutation: {}\n min>80: {}\t relative>linear: {}\t relative&min: {}".format(
-        #     mutation_level,
-        #     thresh_df[thresh_df["min"] > 80].shape[0],
-        #     thresh_df[thresh_df["relative_diff"] > thresh_df["linear_thresh"]].shape[0],
-        #     thresh_df[(thresh_df["min"] > 80) & (thresh_df["relative_diff"] > thresh_df["linear_thresh"])].shape[0]
-        # ))
-
-        # filter snps based on min > 80 AND relative > thresh
+        # # filter snps based on min > 80 AND relative > thresh
         # selected_ids = thresh_df[((thresh_df["abs_diff"] >= 5) & (thresh_df["abs_diff"] <= 80)) &
         #                          (thresh_df["relative_diff"] > thresh_df["linear_thresh"])].index
+
         # filter snps based on lower <= low_thresh
-        selected_ids = thresh_df[thresh_df["min"] <= thresh_df["lower_thresh"]].index
+        # thresh_df is indexed by SNP rsid
+        # TODO: log selected conditions
+
+        selected_ids = thresh_df[(thresh_df["min"] <= thresh_df["lower_thresh"])].index
+        logger.info("{}: {} with min <= lower_thresh".format(mutation_level, len(selected_ids)))
         # append selected snps to selected_snps array
-        selected_snps = selected_snps.union(snp_pheno_pcts.loc[selected_ids].index)
+        selected_snps.update(selected_ids)
 
     return list(selected_snps)
 
@@ -151,7 +156,6 @@ def __identify_mutated_snps(phenotypes, relative_diff_thresh):
     merged = pheno_df_a[mutation_columns].merge(pheno_df_b[mutation_columns], left_index=True, right_index=True,
                                                 suffixes=('_a', '_b'))
 
-    # TODO: logger for which thresh option
     if relative_diff_thresh:
         logger.info("using user defined threshold: {}".format(relative_diff_thresh))
         selected_snps = __select_snps(merged, m=0, b=relative_diff_thresh)
