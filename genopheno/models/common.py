@@ -89,9 +89,7 @@ def build_model(data_set, data_split, no_interactions, negative, model, cross_va
     features = model_eval.get('features')
     if features:
         model_terms = __get_model_term_labels(model_desc)
-        x_train_df = pd.DataFrame(x_train, columns=snp_columns)
-        y_train_s = pd.Series(y_train)
-        features(best_model, model_terms, x_train_df, y_train_s, output_dir)
+        features(best_model, model_terms, output_dir)
 
 
 def __save_confusion_matrix(y_true, y_pred, output_dir, file_suffix):
