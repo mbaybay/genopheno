@@ -1,6 +1,6 @@
 import common
+import pandas as pd
 import os
-from rfpimp import *
 
 from sklearn.ensemble import RandomForestClassifier
 
@@ -8,13 +8,6 @@ from sklearn.ensemble import RandomForestClassifier
 def build_model(dataset, data_split, no_interactions, negative, max_snps, cross_validation, output_dir):
     model_eval = {
         'features': save_features
-    }
-
-    default_params = {
-        "criterion": ["entropy"],
-        "n_estimators": [3000],
-        "max_depth": [None],
-        "max_features": ["sqrt"]
     }
 
     param_grid = {
@@ -48,7 +41,7 @@ def build_model(dataset, data_split, no_interactions, negative, max_snps, cross_
     )
 
 
-def save_features(model, model_terms, x_train, y_train, output_dir):
+def save_features(model, model_terms, output_dir):
     # rf default features
     ftrs = pd.DataFrame()
     ftrs['Feature'] = model_terms
@@ -56,7 +49,3 @@ def save_features(model, model_terms, x_train, y_train, output_dir):
     ftrs.sort_values(by='Importance', ascending=False, inplace=True)
     ftrs.set_index('Feature', inplace=True)
     ftrs.to_csv(os.path.join(output_dir, "rf_features.csv"))
-    # # rf permutation features
-    # imp = importances(model, x_train, y_train)
-    # imp.sort_values(by='Importance', ascending=False, inplace=True)
-    # imp.to_csv(output_dir + "rfpimp_features.csv", )
