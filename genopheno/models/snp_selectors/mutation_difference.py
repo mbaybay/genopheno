@@ -80,19 +80,22 @@ def __filter_snps(row, abs_diff_thresh, relative_diff_thresh, selected_snps):
                 break
 
 
-def __select_snps(snp_pheno_pcts, m=-1.06, b=105):
-    # TODO: docs
+def __select_snps(snp_pheno_pcts, m=-1.14, b=111):
     """
-
-    :param snp_pheno_pcts:
-    :param selected_snps:
-    :param m:
-    :param b:
+    Selects SNPs that have a significant difference in mutation percentage between phenotype groups based on a
+    linear threshold that is modeled after the dominant-recessive disease model. For each SNP, `snp_pheno_pcts` has a
+    record of the percent of users that have full, partial, or no mutation in each phenotype group.
+    The equation for the linear threshold is:
+        linear_thresh = -1.14 * max + 111
+    where max is the higher mutation. SNPs are selected such the lower mutation percent value is less than or equal
+    to the linear threshold.
+    :param snp_pheno_pcts: The DataFrame row containing the mutation percentages. The index is the RSID.
+    :param selected_snps: A list containing the selected SNP RSIDs. If the row has a significant mutation difference,
+                          then the RSID for this row will be added to the list.
+    :param m: slope for linear threshold (default: -1.14)
+    :param b: intercept for linear threshold (default: 111)
     :return:
     """
-
-    logger.info("thresh = {} * max + {}".format(m, b))
-    logger.info("calc min, max, relative_diff, lower_thresh")
 
     selected_snps = set()
 
@@ -102,33 +105,34 @@ def __select_snps(snp_pheno_pcts, m=-1.06, b=105):
         mutation_pct_a = snp_pheno_pcts['pct_{}_a'.format(mutation_level)].round(3)
         mutation_pct_b = snp_pheno_pcts['pct_{}_b'.format(mutation_level)].round(3)
 
-        # calc min, max, relative_diff, linear_thresh
+        # # linear_thresh calculated using MIN
+        # logger.info("linear thresh calculated using MIN")
+        # logger.info("thresh = -1.05 * max + 105")
+        # thresh_df["min"] = pd.concat([mutation_pct_a, mutation_pct_b], axis=1).min(axis=1)
+        # # thresh_df["min"] = thresh_df["min"].apply(lambda min_val: 5 if min_val < 5 else min_val)
+        # thresh_df["abs_diff"] = np.abs(mutation_pct_a - mutation_pct_b)
+        # thresh_df["relative_diff"] = (thresh_df["abs_diff"] / thresh_df["min"]) * 100
+        # # thresh_df["linear_thresh"] = m * thresh_df["min"] + b
+        # thresh_df["linear_thresh"] = -1.05 * thresh_df["abs_diff"] + 105
+        # thresh_df["linear_thresh"] = thresh_df["linear_thresh"].apply(lambda val: 10 if val < 10 else val)
+        # selected_ids = thresh_df[(5 <= thresh_df["abs_diff"]) & (thresh_df["abs_diff"] <= 80) &
+        #                          (thresh_df["relative_diff"] > thresh_df["linear_thresh"])].index
+
+        # linear_thresh calculated using MAX
         thresh_df["min"] = pd.concat([mutation_pct_a, mutation_pct_b], axis=1).min(axis=1)
-        # thresh_df["min"] = thresh_df["min"].apply(lambda min_val: 5 if min_val < 5 else min_val)
         thresh_df["max"] = pd.concat([mutation_pct_a, mutation_pct_b], axis=1).max(axis=1)
         # filter out those with max < 5
-        thresh_df.drop(thresh_df[thresh_df["max"] < 5].index, axis=0, inplace=True)
-        # thresh_df["abs_diff"] = np.abs(mutation_pct_a - mutation_pct_b)
-        # thresh_df["relative_diff"] = m * thresh_df["abs_diff"] + b
+        thresh_df.drop(thresh_df[thresh_df["max"] <= 5].index, axis=0, inplace=True)
+        # MAY 7 TEST: m = -1.07, b=105.35
+        # m = -1.07
+        # b = 105.35
         thresh_df["relative_diff"] = m * thresh_df["max"] + b
         thresh_df["relative_diff"] = thresh_df["relative_diff"].apply(lambda thresh: 20 if thresh < 20 else thresh)
         thresh_df["lower_thresh"] = (1 - (thresh_df["relative_diff"] / 100)) * thresh_df["max"]
-        # thresh_df.to_csv("./thresh_df_{}.csv".format(mutation_level), header=True)
-
-        # logger.info("Mutation: {}\n\tmin<=lower_thresh: {}\n\t5 <= abs_diff <= 80: {}"
-        #             .format(mutation_level, thresh_df[thresh_df["min"] <= thresh_df["lower_thresh"]].shape[0],
-        #                     thresh_df[(thresh_df["abs_diff"] >= 5) & (thresh_df["abs_diff"] <= 80)].shape[0]))
-
-        # # filter snps based on min > 80 AND relative > thresh
-        # selected_ids = thresh_df[((thresh_df["abs_diff"] >= 5) & (thresh_df["abs_diff"] <= 80)) &
-        #                          (thresh_df["relative_diff"] > thresh_df["linear_thresh"])].index
-
         # filter snps based on lower <= low_thresh
         # thresh_df is indexed by SNP rsid
-        # TODO: log selected conditions
-
         selected_ids = thresh_df[(thresh_df["min"] <= thresh_df["lower_thresh"])].index
-        logger.info("{}: {} with min <= lower_thresh".format(mutation_level, len(selected_ids)))
+
         # append selected snps to selected_snps array
         selected_snps.update(selected_ids)
 
