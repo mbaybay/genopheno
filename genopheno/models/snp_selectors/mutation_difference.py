@@ -144,10 +144,8 @@ def __identify_mutated_snps(phenotypes, relative_diff_thresh):
     Identifies SNPs of interest based on mutation differences between the two phenotypes.
     :param phenotypes: A dictionary of phenotypes where the key is the phenotype label and the value is the
                        DataFrame with the mutation information for all users with the phenotype.
-    :param abs_diff_thresh: The minimum difference between SNP mutations for each phenotype to be selected.
-                        See the method __filter_snps for a more complete explanation.
-    :param relative_diff_thresh: The minimum magnitude in the mutation difference between SNPs for each phenotype.
-                             See the method __filter_snps for a more complete explanation.
+    :param relative_diff_thresh: The relative difference in mutation percentage, calculated as a percent of the
+                                larger mutation percent value.
     :return: A list of selected SNP RSIDs.
     """
     if len(phenotypes) != 2:
@@ -197,10 +195,8 @@ def create_dataset(phenotypes, invalid_thresh, invalid_user_thresh, relative_dif
     :param phenotypes: A map of phenotypes where the key is the phenotype ID and the value is the phenotype data frame.
     :param invalid_thresh: The percentage of missing user observations a SNP can have before it is removed
     :param invalid_user_thresh: The acceptable percentage of missing data before a user is discarded
-    :param abs_diff_thresh: Minimum difference in percentage points of mutated alleles between different phenotypes in order
-    to include a SNP in set of candidates
-    :param relative_diff_thresh: # Minimum percent difference in percentage of mutated alleles between different phenotypes
-    for a SNP in order to include a SNP in set of candidates
+    :param relative_diff_thresh: The relative difference in mutation percent, calculated as a percent of the
+                                larger mutation percent value.
     :return: A DataFrame where each row is a user and each column is a SNP.
     The value is the number of mutations (0,1,2).
     """

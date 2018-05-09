@@ -55,9 +55,8 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, relative_diff_thr
     :param preprocessed_dir: The directory containing the preprocessed data
     :param invalid_thresh: The acceptable percentage of missing data before a SNP is discarded
     :param invalid_user_thresh: The acceptable percentage of missing data before a user is discarded
-    :param abs_diff_thresh: The mutation percent difference between phenotypes to be selected as a model feature
-    :param relative_diff_thresh: The relative difference in mutation percentage, calculated as a percent of the
-                                smaller mutation percent value.
+    :param relative_diff_thresh: The relative difference in mutation percent, calculated as a percent of the
+                                larger mutation percent value.
     :param data_split: The percent data used for testing.
     :param no_interactions: If True the model will not contain interactions
     :param negative: The negative phenotype label
@@ -125,29 +124,13 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "--absolute-diff-thresh",
-        "-adt",
-        metavar="percent",
-        type=float,
-        default=20,
-        help="The difference threshold required for the SNP to be selected, in percentage points."
-             "\n\nDefault: 20"
-    )
-
-    parser.add_argument(
         "--relative-diff-thresh",
         "-rdt",
         metavar="percent",
         type=float,
-        help="The relative difference threshold. This is the absolute difference in mutation percentage divided "
-             "by the minimum mutation value out of the two phenotypes. The purpose of this is to filter out "
-             "SNPs where the change meets the difference threshold, but is still a small "
-             "magnitude. For example, if the mutation difference is 5 percentage points, but the SNP mutation "
-             "levels for each phenotype are 100% and 95% then this is less meaningful than if "
-             "the mutation levels were 6% and 1%. The magnitude threshold is meant to filter "
-             "out the SNP where the mutations are 100% and 95% and keep the SNP where the "
-             "mutations are 6% and 1%."
-             "\n\nDefault: 5"
+        help="The relative difference in percent of users with a particular genotype, used for SNP selection."
+             "\n SNPs will be selected such that the lower percent value between the two phenotype groups is "
+             "less than or equal to (1 - (relative_diff_thresh/100)) * higher. "
     )
 
     parser.add_argument(
