@@ -10,6 +10,16 @@ def build_model(dataset, data_split, no_interactions, negative, max_snps, cross_
         'features': save_features
     }
 
+    default_grid = {
+        'n_estimators': [1000],
+        'criterion': ['gini'],
+        'max_features': ['sqrt'],
+        'max_depth': [None],
+        'min_samples_leaf': [0.0025],
+        'min_samples_split': [0.01]
+    }
+
+    # For testing combinations of parameters
     param_grid = {
         "criterion": ["gini", "entropy"],
         # If float then min_samples_split is a percentage and ceil(min_samples_split * n_samples)
@@ -36,7 +46,7 @@ def build_model(dataset, data_split, no_interactions, negative, max_snps, cross_
         cross_validation,
         max_snps,
         output_dir,
-        param_grid=param_grid,
+        param_grid=default_grid,
         model_eval=model_eval
     )
 
