@@ -13,7 +13,7 @@ def setup_logger(output_dir, name):
         'disable_existing_loggers': False,
         'formatters': {
             'standard': {
-                'format': '[%(levelname)s] %(asctime)s %(name)s:  %(message)s'
+                'format': '[%(levegilname)s] %(asctime)s:  %(message)s'
             },
             'simple': {
                 'format': '[%(levelname)s]: %(message)s'
