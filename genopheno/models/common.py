@@ -16,7 +16,7 @@ import logging
 logger = logging.getLogger("root")
 
 
-def build_model(data_set, data_split, no_interactions, negative, model, max_snps, output_dir,
+def build_model(data_set, data_split, no_interactions, negative, model, cross_validation, max_snps, output_dir,
                 param_grid={}, model_eval={}):
     """
     Builds a model for the data set
@@ -25,6 +25,7 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
     :param no_interactions: If false interactions aren't included in the model
     :param negative: The negative phenotype label
     :param model: The model to use for training and testing the data
+    :param cross_validation: The number of folds for k-fold cross validation
     :param max_snps: The maximum number of SNPs for the model to include
     :param output_dir: The directory to write the model artifacts in
     :param param_grid: The parameter matrix for the model
@@ -45,7 +46,6 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, test_size=data_split/float(100), random_state=1, stratify=y
     )
-    #print 'Model training with {} users and testing with {} users'.format(len(y_train), len(y_test))
 
     # Convert classifications to 0 and 1
     #
@@ -69,7 +69,7 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
     x_test = dmatrix(model_desc, pd.DataFrame(x_test, columns=snp_columns))
 
     # Fit training data to model
-    grid = GridSearchCV(model, param_grid=param_grid, cv=3, verbose=True)     # cv: 3-Fold Cross Validation
+    grid = GridSearchCV(model, param_grid=param_grid, cv=cross_validation, verbose=5)
     grid.fit(x_train, y_train)
     best_model = grid.best_estimator_
     model_config['model'] = best_model
@@ -89,7 +89,9 @@ def build_model(data_set, data_split, no_interactions, negative, model, max_snps
     features = model_eval.get('features')
     if features:
         model_terms = __get_model_term_labels(model_desc)
-        features(best_model, model_terms, output_dir)
+        x_train_df = pd.DataFrame(x_train, columns=snp_columns)
+        y_train_s = pd.Series(y_train)
+        features(best_model, model_terms, x_train_df, y_train_s, output_dir)
 
 
 def __save_confusion_matrix(y_true, y_pred, output_dir, file_suffix):

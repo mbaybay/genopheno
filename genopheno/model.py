@@ -7,7 +7,7 @@ import logging
 import logging.config
 
 from models.snp_selectors import mutation_difference
-from models import elastic_net, decision_tree, random_forest
+from models import elastic_net, decision_tree, random_forest, xg_boost
 from util import timed_invoke, expand_path, clean_output, setup_logger
 
 logger = logging.getLogger('root')
@@ -15,7 +15,7 @@ logger = logging.getLogger('root')
 MODELS = {
     'en': elastic_net.build_model,
     'dt': decision_tree.build_model,
-    'rf': random_forest.build_model
+    'rf': random_forest.build_model,
 }
 
 
@@ -49,7 +49,7 @@ def __read_phenotype_input(input_dir):
 
 
 def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, relative_diff_thresh, data_split,
-        no_interactions, negative, max_snps, model_id, output_dir):
+        no_interactions, negative, max_snps, model_id, cross_validation, output_dir):
     """
     Builds a model to predict phenotype
     :param preprocessed_dir: The directory containing the preprocessed data
@@ -62,6 +62,7 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, relative_diff_thr
     :param no_interactions: If True the model will not contain interactions
     :param negative: The negative phenotype label
     :param model_id: The id for the model to use
+    :param cross_validation: number of folds for cross validation
     :param output_dir: The directory to write the model in
     """
     # Expand file paths
@@ -79,12 +80,11 @@ def run(preprocessed_dir, invalid_thresh, invalid_user_thresh, relative_diff_thr
 
     phenotypes = timed_invoke('reading the preprocessed files', lambda: __read_phenotype_input(preprocessed_dir))
 
-    #TODO: create relative_diff_thresh using --> linear (y=-1.05x + 105) OR supplied by user (m=0, b=user-provided)
     data_set = timed_invoke('creating model data set', lambda: mutation_difference.create_dataset(
                                phenotypes, invalid_thresh, invalid_user_thresh, relative_diff_thresh)
                             )
     timed_invoke('building model', lambda: build_model(data_set, data_split, no_interactions, negative, max_snps,
-                                                       output_dir))
+                                                       cross_validation, output_dir))
     logger.info('Output written to "{}"'.format(output_dir))
 
 
@@ -198,6 +198,15 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        "--cross-validation",
+        "-cv",
+        type=int,
+        default=3,
+        help="Number of folds for k-fold cross validation."
+             "\n\nDefault: 3"
+    )
+
+    parser.add_argument(
         "--output",
         "-o",
         metavar="<directory path>",
@@ -210,4 +219,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     run(args.preprocessed, args.invalid_snp_thresh, args.invalid_user_thresh, args.relative_diff_thresh,
-        args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.output)
+        args.split, args.no_interactions, args.negative, args.max_snps, args.model, args.cross_validation,
+        args.output)
